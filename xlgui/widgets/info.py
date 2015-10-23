@@ -45,23 +45,58 @@ from xlgui import (
     cover,
     guiutil
 )
+
+from xlgui.guiutil import GtkTemplate
+
 from xlgui.widgets import playlist
 from xlgui.widgets.playback import PlaybackProgressBar
 
-class TrackInfoPane(Gtk.Alignment):
+@GtkTemplate('ui', 'widgets', 'track_info.ui')
+class TrackInfoPane(Gtk.Box):
     """
         Displays cover art and track data
     """
+    
+    __gtype_name__ = 'TrackInfoPane'
+    
+#        self.info_label = builder.get_object('info_label')
+#        self.action_area = builder.get_object('action_area')
+#        self.progress_box = builder.get_object('progress_box')
+#        self.playback_image = builder.get_object('playback_image')
+
+## Loading one single child Widget works for any of these, but it returns a 'list' instead of a widget:
+#    playback_image,				\
+#    cover_image,				\
+#    action_area,				\
+#    progress_box,				\
+#    info_area,					\
+#    info_label,					\
+#	 progressbar_placeholder	\
+#    cover_image = GtkTemplate.Child.widgets(1)
+    
+## loading all child widgets at once doesn't work at all, always crashes in gi_composites.py:121
+    playback_image,				\
+    cover_image,				\
+    action_area,				\
+    progress_box,				\
+    info_area,					\
+    info_label,					\
+	progressbar_placeholder = GtkTemplate.Child.widgets(7)
+    
     def __init__(self, player):
-        Gtk.Alignment.__init__(self, xscale=1, yscale=1)
+        Gtk.Box.__init__(self)
+        self.init_template()
+        
         self.__player = player
         
-        builder = Gtk.Builder()
-        builder.add_from_file(xdg.get_data_path(
-            'ui', 'widgets', 'track_info.ui'))
+        print(type(self.cover_image))
+        
+#        builder = Gtk.Builder()
+#        builder.add_from_file(xdg.get_data_path(
+#            'ui', 'widgets', 'track_info.ui'))
 
-        info_box = builder.get_object('info_box')
-        info_box.reparent(self)
+#        info_box = builder.get_object('info_box')
+#        info_box.reparent(self)
 
         self.__auto_update = False
         self.__display_progress = False
@@ -77,15 +112,11 @@ class TrackInfoPane(Gtk.Alignment):
         self.__timer = None
         self.__track = None
 
-        self.info_label = builder.get_object('info_label')
-        self.action_area = builder.get_object('action_area')
-        self.progress_box = builder.get_object('progress_box')
-        self.playback_image = builder.get_object('playback_image')
-        self.progressbar = PlaybackProgressBar(player)
-        guiutil.gtk_widget_replace(builder.get_object('progressbar'),
-            self.progressbar)
+        #self.progressbar = PlaybackProgressBar(player)
+        #guiutil.gtk_widget_replace(self.progressbar_placeholder,
+        #    self.progressbar)
         
-        self.cover = cover.CoverWidget(builder.get_object('cover_image'))
+        self.cover = cover.CoverWidget(self.cover_image)
         self.cover.hide()
         self.cover.set_no_show_all(True)
 
