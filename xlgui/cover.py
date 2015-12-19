@@ -52,6 +52,7 @@ from xlgui import (
     guiutil,
     icons
 )
+from xlgui.guiutil import GtkTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -990,200 +991,218 @@ class CoverWindow(object):
             self.cover_window_width = allocation.width
             self.cover_window_height = allocation.height
 
+
 class CoverChooser(GObject.GObject):
     """
         Fetches all album covers for a string, and allows the user to choose
         one out of the list
+        Emits a cover-chosen signal when finished.
+    """
+
+    @GtkTemplate('ui', 'coverchooser.ui')
+    class _CoverChooserDialog(Gtk.Dialog):
+        """
+            UI code of CoverChooser
+        """
+        __gtype_name__ = 'CoverChooserDialog'
+
+        main_container, \
+            previews_box, \
+            set_button, \
+            size_label, \
+            source_label, \
+            covers_model, \
+            info_box, \
+            loading_indicator = GtkTemplate.Child.widgets(8)
+
+        def __init__(self, parent_window, dialog_title, cover_chooser):
+            """
+                Expects the parent window and an optional search string
+            """
+            Gtk.Dialog.__init__(self, dialog_title)
+            self.init_template()
+            self.cover_chooser = cover_chooser
+
+            self.set_transient_for(parent_window)
+
+            self.message = dialogs.MessageBar(
+                parent=self.main_container,
+                buttons=Gtk.ButtonsType.CLOSE
+            )
+            self.message.connect('response', self.on_message_response)
+
+            self.cover_widget = guiutil.ScalableImageWidget()
+            self.cover_widget.set_image_size(350, 350)
+            self.main_container.add(self.cover_widget)
+
+            self.show_all()
+
+        # Callback for content from CoverChooser
+        def on_covers_fetched(self, db_strings, track):
+            """
+                Finishes the dialog setup after all covers have been fetched
+            """
+            if db_strings:
+                for db_string in db_strings:
+                    coverdata = COVER_MANAGER.get_cover_data(db_string)
+                    # Pre-render everything for faster display later
+                    pixbuf = icons.MANAGER.pixbuf_from_data(coverdata)
+
+                    if pixbuf:
+                        self.covers_model.append([
+                            (db_string, coverdata),
+                            pixbuf,
+                            pixbuf.scale_simple(50, 50,
+                                                GdkPixbuf.InterpType.BILINEAR)
+                        ])
+
+                self.previews_box.set_model(self.covers_model)
+
+                self.cover_widget.show()
+                self.set_button.set_sensitive(True)
+
+                # Show thumbnail bar if more than one cover was found
+                if len(db_strings) > 1:
+                    self.previews_box.set_no_show_all(False)
+                    self.previews_box.show_all()
+
+                # Try to select the current cover of the track
+                track_db_string = COVER_MANAGER.get_db_string(track)
+                if track_db_string in db_strings:
+                    position = db_strings.index(track_db_string)
+                else:
+                    position = 0
+                self.previews_box.select_path(Gtk.TreePath(position))
+            else:
+                self.info_box.hide()
+                self.set_button.set_sensitive(False)
+                self.message.show_warning(
+                    _('No covers found.'),
+                    _('None of the enabled sources has a cover for this track, try enabling more sources.')
+                )
+
+            self.loading_indicator.stop()
+            self.loading_indicator.hide()
+
+        @GtkTemplate.Callback
+        def on_cancel_button_clicked(self, button):
+            """
+                Closes the cover chooser
+            """
+            self.cover_chooser._on_cover_chooser_canceled()
+            self.destroy()
+
+        @GtkTemplate.Callback
+        def on_set_button_clicked(self, button):
+            """
+                Chooses the current cover and saves it to the database
+            """
+            paths = self.previews_box.get_selected_items()
+
+            if paths:
+                path = paths[0]
+                coverdata = self.covers_model[path][0]
+                self.cover_chooser._on_cover_chosen(coverdata)
+                self.destroy()
+
+        @GtkTemplate.Callback
+        def on_previews_box_selection_changed(self, iconview):
+            """
+                Switches the currently displayed cover
+            """
+            paths = self.previews_box.get_selected_items()
+
+            if paths:
+                path = paths[0]
+                db_string = self.covers_model[path][0]
+                source = db_string[0].split(':', 1)[0]
+                provider = providers.get_provider('covers', source)
+                pixbuf = self.covers_model[path][1]
+
+                self.cover_widget.set_image_pixbuf(pixbuf)
+                self.size_label.set_text(_('{width}x{height} pixels').format(
+                    width=pixbuf.get_width(), height=pixbuf.get_height()))
+                # Display readable title of the provider, fallback to its name
+                self.source_label.set_text(getattr(provider, 'title', source))
+
+                self.set_button.set_sensitive(True)
+            else:
+                self.set_button.set_sensitive(False)
+
+        @GtkTemplate.Callback
+        def on_previews_box_item_activated(self, iconview, path):
+            """
+                Triggers selecting the current cover
+            """
+            self.set_button.clicked()
+
+        def on_message_response(self, widget, response):
+            """
+                Handles the response for closing the error message
+            """
+            if response == Gtk.ResponseType.CLOSE:
+                # destroying is safe here since worker thread has ended \
+                # for this method to be called
+                self.destroy()
+
+    """
+        Signal for CoverWidget and CoverManager
     """
     __gsignals__ = {
-        'covers-fetched': (
-            GObject.SignalFlags.RUN_LAST,
-            None,
-            (object,)
-        ),
         'cover-chosen': (
             GObject.SignalFlags.RUN_LAST,
             None,
             (object, object)
         )
     }
-    def __init__(self, parent, track, search=None):
+
+    def __init__(self, parent_window, track, search=None):
         """
-            Expects the parent control, a track, an an optional search string
+            :param parent_window: parent window for Gtk.Window
+            :type parent_window: Gtk.Window
+            :param track: Covers will be chosen for this given track
+            :type track: xl.trax.Track
+            :param search: an optional search search string
+            :type search: basestring
         """
         GObject.GObject.__init__(self)
-        self.parent = parent
-        self.builder = Gtk.Builder()
-        self.builder.add_from_file(xdg.get_data_path('ui', 'coverchooser.ui'))
-        self.builder.connect_signals(self)
-        self.window = self.builder.get_object('CoverChooser')
-
-        self.window.set_title(_("Cover options for %(artist)s - %(album)s") % {
-            'artist': track.get_tag_display('artist'),
-            'album': track.get_tag_display('album')
-        })
-        self.window.set_transient_for(parent)
-
-        self.message = dialogs.MessageBar(
-            parent=self.builder.get_object('main_container'),
-            buttons=Gtk.ButtonsType.CLOSE
-        )
-        self.message.connect('response', self.on_message_response)
+        self.stopper = threading.Event()
 
         self.track = track
         self.covers = []
         self.current = 0
 
-        self.cover = guiutil.ScalableImageWidget()
-        self.cover.set_image_size(350, 350)
+        # TRANSLATORS: %(artist) and %(album) will be replaced by album name and artist name
+        dialog_title = _("Cover options for %(artist)s - %(album)s") % {
+                'artist': track.get_tag_display('artist'),
+                'album': track.get_tag_display('album')
+            }
+        self.dialog = self._CoverChooserDialog(parent_window, dialog_title, self)
 
-        self.cover_image_box = self.builder.get_object('cover_image_box')
+        event.add_ui_callback(self._on_covers_fetched, 'coverchooser-covers-fetched', self)
 
-        self.loading_indicator = Gtk.Alignment()
-        self.loading_indicator.props.xalign = 0.5
-        self.loading_indicator.props.yalign = 0.5
-        self.loading_indicator.set_size_request(350, 350)
-        self.cover_image_box.pack_start(self.loading_indicator, True, True, 0)
+        self._fetch_cover()
 
-        try:
-            spinner = Gtk.Spinner()
-            spinner.set_size_request(100, 100)
-            spinner.start()
-            self.loading_indicator.add(spinner)
-        except AttributeError: # Older than GTK 2.20 and PyGTK 2.22
-            self.loading_indicator.add(Gtk.Label(label=_('Loading...')))
-
-        self.size_label = self.builder.get_object('size_label')
-        self.source_label = self.builder.get_object('source_label')
-
-        self.covers_model = self.builder.get_object('covers_model')
-        self.previews_box = self.builder.get_object('previews_box')
-        self.previews_box.set_no_show_all(True)
-        self.previews_box.hide()
-        self.previews_box.set_model(None)
-
-        self.set_button = self.builder.get_object('set_button')
-        self.set_button.set_sensitive(False)
-
-        self.window.show_all()
-
-        self.stopper = threading.Event()
-        self.fetcher_thread = threading.Thread(target=self.fetch_cover, name='Coverfetcher')
-        self.fetcher_thread.start()
-
-    def fetch_cover(self):
+    @common.threaded
+    def _fetch_cover(self):
         """
             Searches for covers for the current track
         """
         db_strings = COVER_MANAGER.find_covers(self.track)
 
-        if db_strings:
-            for db_string in db_strings:
-                if self.stopper.is_set():
-                    return
-
-                coverdata = COVER_MANAGER.get_cover_data(db_string)
-                # Pre-render everything for faster display later
-                pixbuf = icons.MANAGER.pixbuf_from_data(coverdata)
-
-                if pixbuf:
-                    self.covers_model.append([
-                        (db_string, coverdata),
-                        pixbuf,
-                        pixbuf.scale_simple(50, 50, GdkPixbuf.InterpType.BILINEAR)
-                    ])
-
-        self.emit('covers-fetched', db_strings)
-
-    def do_covers_fetched(self, db_strings):
-        """
-            Finishes the dialog setup after all covers have been fetched
-        """
         if self.stopper.is_set():
             return
 
-        self.cover_image_box.remove(self.loading_indicator)
-        self.previews_box.set_model(self.covers_model)
+        event.log_event('coverchooser-covers-fetched', self, db_strings)
 
-        if db_strings:
-            self.cover_image_box.pack_start(self.cover, True, True, 0)
-            self.cover.show()
-            self.set_button.set_sensitive(True)
+    def _on_covers_fetched(self, e, source, db_strings):
+        if self.stopper.is_set():
+            return
+        self.dialog.on_covers_fetched(db_strings, self.track)
 
-            # Show thumbnail bar if more than one cover was found
-            if len(db_strings) > 1:
-                self.previews_box.set_no_show_all(False)
-                self.previews_box.show_all()
+    def _on_cover_chosen(self, coverdata):
+        COVER_MANAGER.set_cover(self.track, coverdata[0], coverdata[1])
+        self.emit('cover-chosen', self.track, coverdata[1])
 
-            # Try to select the current cover of the track, fallback to first
-            track_db_string = COVER_MANAGER.get_db_string(self.track)
-            position = db_strings.index(track_db_string) if track_db_string in db_strings else 0
-            self.previews_box.select_path(Gtk.TreePath(position))
-        else:
-            self.builder.get_object('info_box').hide()
-            self.builder.get_object('actions_box').hide()
-            self.message.show_warning(
-                _('No covers found.'),
-                _('None of the enabled sources has a cover for this track, try enabling more sources.')
-            )
-
-    def on_cancel_button_clicked(self, button):
-        """
-            Closes the cover chooser
-        """
-        # Notify the fetcher thread to stop
+    def _on_cover_chooser_canceled(self):
         self.stopper.set()
-
-        self.window.destroy()
-
-    def on_set_button_clicked(self, button):
-        """
-            Chooses the current cover and saves it to the database
-        """
-        paths = self.previews_box.get_selected_items()
-
-        if paths:
-            path = paths[0]
-            coverdata = self.covers_model[path][0]
-
-            COVER_MANAGER.set_cover(self.track, coverdata[0], coverdata[1])
-
-            self.emit('cover-chosen', self.track, coverdata[1])
-            self.window.destroy()
-
-    def on_previews_box_selection_changed(self, iconview):
-        """
-            Switches the currently displayed cover
-        """
-        paths = self.previews_box.get_selected_items()
-
-        if paths:
-            path = paths[0]
-            db_string = self.covers_model[path][0]
-            source = db_string[0].split(':', 1)[0]
-            provider = providers.get_provider('covers', source)
-            pixbuf = self.covers_model[path][1]
-
-            self.cover.set_image_pixbuf(pixbuf)
-            self.size_label.set_text(_('{width}x{height} pixels').format(
-                width=pixbuf.get_width(), height=pixbuf.get_height()))
-            # Display readable title of the provider, fallback to its name
-            self.source_label.set_text(getattr(provider, 'title', source))
-
-            self.set_button.set_sensitive(True)
-        else:
-            self.set_button.set_sensitive(False)
-
-    def on_previews_box_item_activated(self, iconview, path):
-        """
-            Triggers selecting the current cover
-        """
-        self.set_button.clicked()
-
-    def on_message_response(self, widget, response):
-        """
-            Handles the response for closing
-        """
-        if response == Gtk.ResponseType.CLOSE:
-            self.window.destroy()
-
