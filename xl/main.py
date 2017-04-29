@@ -36,24 +36,32 @@ import os
 import platform
 import sys
 import threading
+import time
 
 from xl import logger_setup
 from xl.nls import gettext as _
 
 # Imported later to avoid PyGObject imports just for --help.
-Gio = common = xdg = None
+GLib = Gio = common = xdg = None
+
 
 def _do_heavy_imports():
-    global Gio, common, xdg
+    global Gio, common, xdg, GLib
 
     import gi
     gi.require_version('Gdk', '3.0')
     gi.require_version('Gtk', '3.0')
     gi.require_version('Gst', '1.0')
     gi.require_version('GIRepository', '2.0')
-    
-    from gi.repository import Gio
-    from xl import common, xdg
+
+    from gi.repository import Gio as import_Gio
+    Gio = import_Gio
+    from gi.repository import GLib as import_GLib
+    GLib = import_GLib
+    from xl import common as import_common
+    common = import_common
+    from xl import xdg as import_xdg
+    xdg = import_xdg
 
 # placeholder, - xl.version can be slow to import, which would slow down
 # cli args. Thus we import __version__ later.
@@ -219,6 +227,69 @@ def create_argument_parser():
 
     return p
 
+
+def _init_directories(options):
+    """
+        Initializes exaile's directory structure.
+        This function depends on the `xdg` module being imported
+        This function assumes nothing but the given parameter
+
+        @param options: Result of ArgumentParser.parse_args()
+    """
+    if options.UseDataDir:
+        xdg.data_dirs.insert(1, options.UseDataDir)
+
+    # this is useful on Win32, because you cannot set these directories
+    # via environment variables
+    if options.UseAllDataDir:
+        xdg.data_home = options.UseAllDataDir
+        xdg.data_dirs.insert(0, xdg.data_home)
+        xdg.config_home = options.UseAllDataDir
+        xdg.config_dirs.insert(0, xdg.config_home)
+        xdg.cache_home = options.UseAllDataDir
+
+    try:
+        xdg._make_missing_dirs()
+    except OSError as err:
+        print('ERROR: Could not create configuration directories: %s' % err, file=sys.stderr)
+        sys.exit(1)
+
+
+def _init_logging(options):
+    """
+        Initializes logging
+        This function depends on no import being done.
+        This function assumes nothing but the given parameters.
+
+        @param options: Result of ArgumentParser.parse_args()
+    """
+
+    # Make event debug imply debug
+    if options.DebugEventFull:
+        options.DebugEvent = True
+
+    if options.DebugEvent:
+        options.Debug = True
+
+    try:
+        logger_setup.start_logging(options.Debug,
+                                   options.Quiet,
+                                   options.DebugThreads,
+                                   options.ModuleFilter,
+                                   options.LevelFilter)
+    except OSError as err:
+        print('ERROR: could not setup logging: %s' % err, file=sys.stderr)
+        sys.exit(1)
+
+    global logger
+    import logging
+    logger = logging.getLogger(__name__)
+
+
+def _print_time():
+    print(time.clock())
+
+
 class Exaile(object):
     _exaile = None
 
@@ -237,6 +308,17 @@ class Exaile(object):
     player = property(__get_player)
     queue = property(__get_queue)
     lyrics = property(__get_lyrics)
+    collection = None
+    playlists = None
+    smart_playlists = None
+    devices = None
+    hal = None
+    udisks = None
+    udisks2 = None
+    plugins = None
+    stations = None
+    radio = None
+    gui = None
 
     def __init__(self):
         """
@@ -254,101 +336,51 @@ class Exaile(object):
 
         _do_heavy_imports()
 
-        if self.options.UseDataDir:
-            xdg.data_dirs.insert(1, self.options.UseDataDir)
+        _init_logging(self.options)
 
-        # this is useful on Win32, because you cannot set these directories
-        # via environment variables
-        if self.options.UseAllDataDir:
-            xdg.data_home = self.options.UseAllDataDir
-            xdg.data_dirs.insert(0, xdg.data_home)
-            xdg.config_home = self.options.UseAllDataDir
-            xdg.config_dirs.insert(0, xdg.config_home)
-            xdg.cache_home = self.options.UseAllDataDir
-            
-        try:
-            xdg._make_missing_dirs()
-        except OSError as e:
-            print('ERROR: Could not create configuration directories: %s' % e, file=sys.stderr)
-            return
-            
-
-        # Make event debug imply debug
-        if self.options.DebugEventFull:
-            self.options.DebugEvent = True
-        
-        if self.options.DebugEvent:
-            self.options.Debug = True
-
-        try:
-            logger_setup.start_logging(self.options.Debug,
-                                       self.options.Quiet,
-                                       self.options.DebugThreads,
-                                       self.options.ModuleFilter,
-                                       self.options.LevelFilter)
-        except OSError as e:
-            print('ERROR: could not setup logging: %s' % e, file=sys.stderr)
-            return
-        
-        global logger
-        import logging
-        logger = logging.getLogger(__name__)
+        _init_directories(self.options)
 
         try:
             # Late import ensures xl.event uses correct logger
             from xl import event
-    
+
             if self.options.EventFilter:
                 event.EVENT_MANAGER.logger_filter = self.options.EventFilter
                 self.options.DebugEvent = True
-    
+
             if self.options.DebugEvent:
                 event.EVENT_MANAGER.use_logger = True
-    
+
             if self.options.DebugEventFull:
                 event.EVENT_MANAGER.use_verbose_logger = True
-    
+
             # initial mainloop setup. The actual loop is started later,
             # if necessary
-            self.mainloop_init()
-    
-            #initialize DbusManager
-            if self.options.StartGui and self.options.Dbus:
-                from xl import xldbus
-                exit = xldbus.check_exit(self.options, self.options.locs)
-                if exit == "exit":
-                    sys.exit(0)
-                elif exit == "command":
-                    if not self.options.StartAnyway:
-                        sys.exit(0)
-                self.dbus = xldbus.DbusManager(self)
-    
+            self.mainloop_prepare()
+
             # import version, see note above
             global __version__
             from xl.version import __version__
-    
-            #load the rest.
-            self.__init()
-    
-            #handle delayed commands
-            if self.options.StartGui and self.options.Dbus and \
-                    self.options.StartAnyway and exit == "command":
-                xldbus.run_commands(self.options, self.dbus)
-    
-            #connect dbus signals
-            if self.options.StartGui and self.options.Dbus:
-                self.dbus._connect_signals()
-    
+
             # On SIGTERM, quit normally.
             import signal
             signal.signal(signal.SIGTERM, (lambda sig, stack: self.quit()))
-    
+
+            GLib.idle_add(self.__init)
+
             # run the GUIs mainloop, if needed
             if self.options.StartGui:
                 import xlgui
                 xlgui.mainloop()
+            else:
+                loop = GLib.MainLoop()
+                context = loop.get_context()
+                t = threading.Thread(target=self.__mainloop, args=(context,))
+                t.daemon = True
+                t.start()
         except Exception:
             logger.exception("Unhandled exception")
+            sys.exit(1)
 
     def __init(self):
         """
@@ -356,6 +388,18 @@ class Exaile(object):
         """
         # pylint: disable-msg=W0201
         logger.info("Loading Exaile %s on Python %s..." % (__version__, platform.python_version()))
+        _print_time()
+
+        #initialize DbusManager
+        if self.options.StartGui and self.options.Dbus:
+            from xl import xldbus
+            exit = xldbus.check_exit(self.options, self.options.locs)
+            if exit == "exit":
+                sys.exit(0)
+            elif exit == "command":
+                if not self.options.StartAnyway:
+                    sys.exit(0)
+            self.dbus = xldbus.DbusManager(self)
 
         logger.info("Loading settings...")
         try:
@@ -363,9 +407,14 @@ class Exaile(object):
         except common.VersionError:
             logger.exception("Error loading settings")
             sys.exit(1)
-            
+
         logger.debug("Settings loaded from %s" % settings.location)
-        
+
+        GLib.idle_add(self.__init_locale)
+        return False
+
+    def __init_locale(self):
+        _print_time()
         # display locale information if available
         try:
             import locale
@@ -377,15 +426,26 @@ class Exaile(object):
         except Exception:
             pass
 
-        splash = None
+        GLib.idle_add(self.__init_splash)
+        return False
+
+    def __init_splash(self):
+        _print_time()
+        self.__splash = None
+        from xl import settings
 
         if self.options.StartGui:
             if settings.get_option('gui/use_splash', True):
                 from xlgui.widgets.info import Splash
 
-                splash = Splash()
-                splash.show()
+                self.__splash = Splash()
+                self.__splash.show()
+        GLib.idle_add(self.__init_migrate)
+        return False
 
+    def __init_migrate(self):
+        _print_time()
+        from xl import settings
         firstrun = settings.get_option("general/first_run", True)
 
         if not self.options.NoImport and \
@@ -406,40 +466,63 @@ class Exaile(object):
         # Migrate builtin OSD to plugin
         from xl.migrations.settings import osd
         osd.migrate()
-        
+
         # Migrate engines
         from xl.migrations.settings import engine
         engine.migrate()
-        
+
+        GLib.idle_add(self.__init_audio)
+        return False
+
+    def __init_audio(self):
+        _print_time()
         # TODO: enable audio plugins separately from normal
         #       plugins? What about plugins that use the player?
-        
+
         # Gstreamer doesn't initialize itself automatically, and fails
         # miserably when you try to inherit from something and GST hasn't
         # been initialized yet. So this is here.
         from gi.repository import Gst
         Gst.init(None)
 
+        GLib.idle_add(self.__init_plugins)
+        return False
+
+    def __init_plugins(self):
+        _print_time()
+
         # Initialize plugin manager
         from xl import plugins
         self.plugins = plugins.PluginsManager(self)
-        
+
         if not self.options.SafeMode:
             logger.info("Loading plugins...")
             self.plugins.load_enabled()
         else:
             logger.info("Safe mode enabled, not loading plugins.")
 
+        GLib.idle_add(self.__init_collection)
+        return False
+
+    def __init_collection(self):
+        _print_time()
         # Initialize the collection
         logger.info("Loading collection...")
         from xl import collection
         try:
-            self.collection = collection.Collection("Collection",
-                    location=os.path.join(xdg.get_data_dir(), 'music.db'))
+            self.collection = collection.Collection(
+                "Collection", location=os.path.join(xdg.get_data_dir(), 'music.db'))
         except common.VersionError:
             logger.exception("VersionError loading collection")
             sys.exit(1)
 
+        GLib.idle_add(self.__init_player)
+        return False
+
+    def __init_player(self):
+        _print_time()
+        from xl import settings
+        firstrun = settings.get_option("general/first_run", True)
         from xl import event
         # Set up the player and playback queue
         from xl import player
@@ -448,8 +531,8 @@ class Exaile(object):
         # Initalize playlist manager
         from xl import playlist
         self.playlists = playlist.PlaylistManager()
-        self.smart_playlists = playlist.SmartPlaylistManager('smart_playlists',
-            collection=self.collection)
+        self.smart_playlists = playlist.SmartPlaylistManager(
+            'smart_playlists', collection=self.collection)
         if firstrun:
             self._add_default_playlists()
         event.log_event("playlists_loaded", self, None)
@@ -458,22 +541,31 @@ class Exaile(object):
         from xl import dynamic
         dynamic.MANAGER.collection = self.collection
 
+        GLib.idle_add(self.__init_devices)
+        return False
+
+    def __init_devices(self):
         # Initalize device manager
         logger.info("Loading devices...")
+        _print_time()
+
         from xl import devices
+        from xl import event
+        from xl import playlist
+
         self.devices = devices.DeviceManager()
         event.log_event("device_manager_ready", self, None)
 
         # Initialize dynamic device discovery interface
         # -> if initialized and connected, then the object is not None
-        
+
         self.udisks2 = None
         self.udisks = None
         self.hal = None
-        
+
         if self.options.Hal:
             from xl import hal
-                
+
             udisks2 = hal.UDisks2(self.devices)
             if udisks2.connect():
                 self.udisks2 = udisks2
@@ -492,6 +584,16 @@ class Exaile(object):
         self.stations = playlist.PlaylistManager('radio_stations')
         self.radio = radio.RadioManager()
 
+        GLib.idle_add(self.__init_gui)
+        return False
+
+    def __init_gui(self):
+        _print_time()
+        from xl import event
+        from xl import player
+        from xl import settings
+        from xl import xldbus
+        firstrun = settings.get_option("general/first_run", True)
         self.gui = None
         # Setup GUI
         if self.options.StartGui:
@@ -502,8 +604,9 @@ class Exaile(object):
             self.gui.main.window.show_all()
             event.log_event("gui_loaded", self, None)
 
-            if splash is not None:
-                splash.destroy()
+            if self.__splash is not None:
+                self.__splash.destroy()
+                self.__splash = None
 
         if firstrun:
             settings.set_option("general/first_run", False)
@@ -532,6 +635,17 @@ class Exaile(object):
         if restore:
             player.QUEUE._restore_player_state(
                     os.path.join(xdg.get_data_dir(), 'player.state'))
+
+            #handle delayed commands
+            if self.options.StartGui and self.options.Dbus and \
+                    self.options.StartAnyway and exit == "command":
+                xldbus.run_commands(self.options, self.dbus)
+
+            #connect dbus signals
+            if self.options.StartGui and self.options.Dbus:
+                self.dbus._connect_signals()
+
+        return False
 
         # pylint: enable-msg=W0201
 
@@ -565,7 +679,7 @@ class Exaile(object):
             pl.add_param('__rating', '>', item)
             self.smart_playlists.save_playlist(pl, overwrite=True)
 
-    def mainloop_init(self):
+    def mainloop_prepare(self):
         from gi.repository import GObject
         
         major, minor, patch = GObject.pygobject_version
@@ -582,14 +696,6 @@ class Exaile(object):
             dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
             dbus.mainloop.glib.threads_init()
             dbus.mainloop.glib.gthreads_init()
-
-        if not self.options.StartGui:
-            from gi.repository import GLib
-            loop = GLib.MainLoop()
-            context = loop.get_context()
-            t = threading.Thread(target=self.__mainloop, args=(context,))
-            t.daemon = True
-            t.start()
 
     def __mainloop(self, context):
         while 1:
