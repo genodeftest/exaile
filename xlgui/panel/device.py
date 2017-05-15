@@ -118,8 +118,8 @@ class DevicePanel(panel.Panel):
 
         self.notebook = self.builder.get_object("device_notebook")
 
-        self.collectionpanel = ReceptiveCollectionPanel(parent,
-                                                        collection=device.collection, name=name, label=label)
+        self.collectionpanel = ReceptiveCollectionPanel(
+            parent, collection=device.collection, name=name, label=label)
         self.collectionpanel.add_tracks_func = self.add_tracks_func
 
         self.collectionpanel.connect('append-items',
@@ -135,8 +135,9 @@ class DevicePanel(panel.Panel):
         self.device.add_tracks(tracks)
         thread = DeviceTransferThread(self.device)
         thread.connect('done', lambda *e: self.load_tree())
-        self.main.controller.progress_manager.add_monitor(thread,
-                                                          _("Transferring to %s...") % self.name, 'drive-harddisk')
+        self.main.controller.progress_manager.add_monitor(
+            thread, _("Transferring to %s...") %
+            self.name, 'drive-harddisk')
 
     def get_panel(self):
         return self.collectionpanel.get_panel()

@@ -105,8 +105,9 @@ def really_main():
                                          stype="_daap._tcp")
     zeroconf.publish()
     log.warn("Listening.")
-    httpd = MyThreadedHTTPServer(('0.0.0.0', spydaap.port),
-                                 spydaap.server.makeDAAPHandlerClass(spydaap.server_name, cache, md_cache, container_cache))
+    httpd = MyThreadedHTTPServer(
+        ('0.0.0.0', spydaap.port), spydaap.server.makeDAAPHandlerClass(
+            spydaap.server_name, cache, md_cache, container_cache))
 
     signal.signal(signal.SIGTERM, make_shutdown(httpd))
     signal.signal(signal.SIGHUP, rebuild_cache)

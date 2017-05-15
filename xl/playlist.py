@@ -1128,8 +1128,10 @@ class Playlist(object):
 
         if shuffle_mode != 'disabled':
             if self.current is not None:
-                self.__tracks.set_meta_key(current_position,
-                                           "playlist_shuffle_history", self.__shuffle_history_counter)
+                self.__tracks.set_meta_key(
+                    current_position,
+                    "playlist_shuffle_history",
+                    self.__shuffle_history_counter)
                 self.__shuffle_history_counter += 1
             next_index, next = self.__next_random_track(current_position, shuffle_mode)
             if next is not None:
@@ -1500,7 +1502,8 @@ class Playlist(object):
                     setattr(self, item, val)
                 except TypeError:  # don't bail if we try to set an invalid mode
                     logger.debug(
-                        "Got a TypeError when trying to set attribute %s to %s during playlist restore." % (item, val))
+                        "Got a TypeError when trying to set attribute %s to %s during playlist restore." %
+                        (item, val))
 
     def reverse(self):
         # reverses current view
@@ -2001,7 +2004,7 @@ class PlaylistManager(object):
             pl.save_to_location(os.path.join(self.playlist_dir,
                                              encode_filename(name)))
 
-            if not name in self.playlists:
+            if name not in self.playlists:
                 self.playlists.append(name)
             # self.playlists.sort()
             self.save_order()

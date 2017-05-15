@@ -447,8 +447,9 @@ class Exaile(object):
         logger.info("Loading collection...")
         from xl import collection
         try:
-            self.collection = collection.Collection("Collection",
-                                                    location=os.path.join(xdg.get_data_dir(), 'music.db'))
+            self.collection = collection.Collection(
+                "Collection", location=os.path.join(
+                    xdg.get_data_dir(), 'music.db'))
         except common.VersionError:
             logger.exception("VersionError loading collection")
             sys.exit(1)

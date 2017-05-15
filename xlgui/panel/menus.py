@@ -106,7 +106,8 @@ def __create_collection_panel_context_menu():
     items.append(menu.simple_separator('cp-sep', after=['properties']))
     items.append(menuitems.OpenDirectoryMenuItem('open-directory', after=[items[-1].name]))
     items.append(menuitems.TrashMenuItem('trash-tracks',
-                                         after=[items[-1].name], delete_tracks_func=collection_delete_tracks_func))
+                                         after=[items[-1].name],
+                                         delete_tracks_func=collection_delete_tracks_func))
 
     for item in items:
         item.register('collection-panel-context-menu')
@@ -122,8 +123,8 @@ class CollectionContextMenu(menu.MultiProviderMenu):
     '''
 
     def __init__(self, panel):
-        menu.MultiProviderMenu.__init__(self,
-                                        ['track-panel-menu', 'collection-panel-context-menu'], panel)
+        menu.MultiProviderMenu.__init__(
+            self, ['track-panel-menu', 'collection-panel-context-menu'], panel)
 
     def get_context(self):
         context = common.LazyDict(self._parent)

@@ -213,8 +213,8 @@ class CoverManager(GObject.GObject):
             cover_pixbuf = pixbuf_from_data(cover_data) if cover_data else None
 
             try:
-                thumbnail_pixbuf = cover_pixbuf.scale_simple(*cover_size,
-                                                             interp_type=GdkPixbuf.InterpType.BILINEAR)
+                thumbnail_pixbuf = cover_pixbuf.scale_simple(
+                    *cover_size, interp_type=GdkPixbuf.InterpType.BILINEAR)
             except AttributeError:  # cover_pixbuf is None
                 thumbnail_pixbuf = default_cover_pixbuf
                 outstanding.append(album)
@@ -913,8 +913,8 @@ class CoverWindow(object):
                          self.image_ratio)
         if new_width != self.image_pixbuf.get_width() or \
            new_height != self.image_pixbuf.get_height():
-            self.image_pixbuf = self.image_original_pixbuf.scale_simple(new_width,
-                                                                        new_height, self.image_interp)
+            self.image_pixbuf = self.image_original_pixbuf.scale_simple(
+                new_width, new_height, self.image_interp)
 
     def set_ratio_to_fit(self):
         """Calculates and sets the needed ratio to show the full image"""
@@ -1125,10 +1125,8 @@ class CoverChooser(GObject.GObject):
         else:
             self.builder.get_object('stack').hide()
             self.builder.get_object('actions_box').hide()
-            self.message.show_warning(
-                _('No covers found.'),
-                _('None of the enabled sources has a cover for this track, try enabling more sources.')
-            )
+            self.message.show_warning(_('No covers found.'), _(
+                'None of the enabled sources has a cover for this track, try enabling more sources.'))
 
     def on_cancel_button_clicked(self, button):
         """

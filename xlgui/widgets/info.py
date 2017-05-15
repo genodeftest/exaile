@@ -525,10 +525,11 @@ class Statusbar(object):
         # widgets of the status bar into it.
         self.status_bar = status_bar
         self.formatter = StatusbarTextFormatter(
-            settings.get_option('gui/statusbar_info_format',
-                                '${playlist_count:selection=override, suffix= }'
-                                '${playlist_duration:selection=override, format=long, prefix=(, suffix=)\, }'
-                                '$collection_count'))
+            settings.get_option(
+                'gui/statusbar_info_format',
+                '${playlist_count:selection=override, suffix= }'
+                '${playlist_duration:selection=override, format=long, prefix=(, suffix=)\, }'
+                '$collection_count'))
 
         self.info_label = Gtk.Label()
 

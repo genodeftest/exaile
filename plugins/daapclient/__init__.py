@@ -598,8 +598,9 @@ class DaapLibrary(collection.Library):
             count = 0
 
         if count > 0:
-            logger.info('Adding %d tracks from %s. (%f s)' % (count,
-                                                              self.daap_share.name, time.time() - t))
+            logger.info(
+                'Adding %d tracks from %s. (%f s)' %
+                (count, self.daap_share.name, time.time() - t))
             self.collection.add_tracks(self.daap_share.all)
 
         if notify_interval is not None:

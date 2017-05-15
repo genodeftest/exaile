@@ -245,8 +245,9 @@ def import_tags(exaile):
         import_dialog = GtImporter(exaile, uris)
         import_dialog.show()
 
-    file_dialog = dialogs.DirectoryOpenDialog(exaile.gui.main.window,
-                                              title=_('Select directory to import grouping tags from'))
+    file_dialog = dialogs.DirectoryOpenDialog(
+        exaile.gui.main.window,
+        title=_('Select directory to import grouping tags from'))
     file_dialog.connect('uris-selected', _on_uris_selected)
     file_dialog.run()
     file_dialog.destroy()

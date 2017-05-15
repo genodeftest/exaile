@@ -286,8 +286,8 @@ class MainWindow(GObject.GObject):
                                  self.on_stop_button_press_event)
         self.stop_button.connect('button-release-event',
                                  self.on_stop_button_release_event)
-        self.stop_button.drag_dest_set(Gtk.DestDefaults.ALL,
-                                       [Gtk.TargetEntry.new("exaile-index-list", Gtk.TargetFlags.SAME_APP, 0)], Gdk.DragAction.COPY)
+        self.stop_button.drag_dest_set(Gtk.DestDefaults.ALL, [Gtk.TargetEntry.new(
+            "exaile-index-list", Gtk.TargetFlags.SAME_APP, 0)], Gdk.DragAction.COPY)
         self.stop_button.connect('drag-motion',
                                  self.on_stop_button_drag_motion)
         self.stop_button.connect('drag-leave',
@@ -1074,7 +1074,7 @@ class MainWindow(GObject.GObject):
             # else
             #    destroy tray
 
-            if self.minimized != prev_minimized and self.minimized == True:
+            if self.minimized != prev_minimized and self.minimized:
                 if not settings.get_option('gui/use_tray', False) and \
                         self.controller.tray_icon is None:
                     self.controller.tray_icon = tray.TrayIcon(self)

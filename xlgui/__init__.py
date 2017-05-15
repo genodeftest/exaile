@@ -252,8 +252,10 @@ class Main(object):
             new_libraries = sorted(dialog.get_items())
 
             if collection_libraries != new_libraries:
-                collection_locations = [location
-                                        for location, monitored, startup_scan in collection_libraries]
+                collection_locations = [
+                    location for location,
+                    monitored,
+                    startup_scan in collection_libraries]
                 new_locations = [location
                                  for location, monitored, startup_scan in new_libraries]
 

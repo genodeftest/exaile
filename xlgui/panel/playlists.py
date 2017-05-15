@@ -329,7 +329,7 @@ class BasePlaylistPanelMixin(GObject.GObject):
         """
             Loads the playlist tracks into the node for the specified playlist
         """
-        if not playlist in self.playlist_nodes:
+        if playlist not in self.playlist_nodes:
             return
 
         expanded = self.tree.row_expanded(

@@ -50,7 +50,9 @@ def DAAPParseCodeTypes(treeroot):
                         dtype = dmapDataTypes[info.value]
                     except Exception:
                         log.debug(
-                            'DAAPParseCodeTypes: unknown data type %s for code %s, defaulting to s', info.value, name)
+                            'DAAPParseCodeTypes: unknown data type %s for code %s, defaulting to s',
+                            info.value,
+                            name)
                         dtype = 's'
                 else:
                     raise DAAPError('DAAPParseCodeTypes: unexpected code %s at level 2' %
@@ -478,9 +480,10 @@ class DAAPPlaylist(object):
 
     def tracks(self):
         """returns all the tracks in this playlist, as DAAPTrack objects"""
-        response = self.database.session.request("/databases/%s/containers/%s/items" % (self.database.id, self.id), {
-            'meta': daap_atoms
-        })
+        response = self.database.session.request(
+            "/databases/%s/containers/%s/items" %
+            (self.database.id, self.id), {
+                'meta': daap_atoms})
         track_list = response.getAtom("mlcl").contains
         return [DAAPTrack(self.database, t) for t in track_list]
 

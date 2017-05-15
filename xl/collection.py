@@ -684,7 +684,7 @@ class Library(object):
         album = album.lower()
         artist = artist.lower()
         try:
-            if not basedir in ccheck:
+            if basedir not in ccheck:
                 ccheck[basedir] = {}
 
             if not album in ccheck[basedir]:
@@ -726,7 +726,7 @@ class Library(object):
                 tr.set_tag_raw('__modified', mtime)
         else:
             tr = trax.Track(uri)
-            if tr._scan_valid == True:
+            if tr._scan_valid:
                 tr.set_tag_raw('__date_added', time.time())
                 self.collection.add(tr)
                 tr.set_tag_raw('__modified', mtime)

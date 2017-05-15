@@ -372,16 +372,10 @@ class PlaylistNotebook(SmartNotebook):
             dt = (datetime.now() - close_time)
             if dt.seconds > 60:
                 display_name = _('{playlist_name} ({track_count} tracks, closed {minutes} min ago)').format(
-                    playlist_name=playlist.name,
-                    track_count=len(playlist),
-                    minutes=dt.seconds // 60
-                )
+                    playlist_name=playlist.name, track_count=len(playlist), minutes=dt.seconds // 60)
             else:
                 display_name = _('{playlist_name} ({track_count} tracks, closed {seconds} sec ago)').format(
-                    playlist_name=playlist.name,
-                    track_count=len(playlist),
-                    seconds=dt.seconds
-                )
+                    playlist_name=playlist.name, track_count=len(playlist), seconds=dt.seconds)
             item = Gtk.ImageMenuItem.new_with_mnemonic(display_name)
             item.set_image(Gtk.Image.new_from_icon_name('music-library', Gtk.IconSize.MENU))
 
