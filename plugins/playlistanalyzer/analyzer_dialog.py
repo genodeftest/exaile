@@ -332,8 +332,9 @@ class AnalyzerDialog(object):
             output_fname = '%s%sanalysis.html' % (pname, ' ' if ' ' in pname else '-')
 
         # get output file
-        output_uri = dialogs.save(self.window, output_fname, 'plugin/playlist_analyzer/dlg_location',
-                                  None, _("Save analysis"))
+        output_uri = dialogs.save(self.window, output_fname,
+                                  'plugin/playlist_analyzer/dlg_location', None,
+                                  _("Save analysis"))
 
         if output_uri is None:
             return

@@ -403,9 +403,11 @@ class TrackDB(object):
         """
         import warnings
         warnings.warn("TrackDB.search is deprecated.", DeprecationWarning)
-        tracks = [x.track for x in search_tracks_from_string(self, query,
-                                                             case_sensitive=False, keyword_tags=['artist', 'albumartist',
-                                                                                                 'album', 'title'])]
+        tracks = [
+            x.track
+            for x in search_tracks_from_string(
+                self, query, case_sensitive=False,
+                keyword_tags=['artist', 'albumartist', 'album', 'title'])]
 
         if sort_fields:
             tracks = sort_tracks(sort_fields, tracks, reverse)

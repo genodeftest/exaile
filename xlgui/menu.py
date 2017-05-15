@@ -183,8 +183,10 @@ def __create_view_menu():
 
     def show_playing_track_cb(*args):
         get_main().playlist_container.show_current_track()
-    items.append(menuitems.ShowCurrentTrackMenuItem('show-playing-track', [],
-                                                    show_playing_track_cb, accelerator='<Primary>j'))
+    items.append(
+        menuitems.ShowCurrentTrackMenuItem(
+            'show-playing-track', [],
+            show_playing_track_cb, accelerator='<Primary>j'))
     accelerators.append(Accelerator('<Primary>j', show_playing_track_cb))
 
     items.append(_sep('show-playing-track-sep', [items[-1].name]))
@@ -195,8 +197,11 @@ def __create_view_menu():
 
     def playlist_utilities_is_checked(name, parent, context):
         return settings.get_option('gui/playlist_utilities_bar_visible', True)
-    items.append(menu.check_menu_item('playlist-utilities', [items[-1].name],
-                                      _("_Playlist Utilities Bar"), playlist_utilities_is_checked, playlist_utilities_cb))
+    items.append(
+        menu.check_menu_item(
+            'playlist-utilities', [items[-1].name],
+            _("_Playlist Utilities Bar"),
+            playlist_utilities_is_checked, playlist_utilities_cb))
 
     items.append(_smi('columns', [items[-1].name], _('C_olumns'),
                       submenu=menu.ProviderMenu('playlist-columns-menu', get_main())))

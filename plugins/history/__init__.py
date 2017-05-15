@@ -109,8 +109,8 @@ class HistoryPlugin(object):
         if os.path.exists(self.history_loc):
             # TODO: The parent should be the Preferences window, but we don't
             # have access to it, so this just uses the main window.
-            dialog = Gtk.MessageDialog(exaile.gui.main.window, Gtk.DialogFlags.MODAL, Gtk.MessageType.QUESTION, Gtk.ButtonsType.YES_NO,
-                                       _('Erase stored history?'))
+            dialog = Gtk.MessageDialog(exaile.gui.main.window, Gtk.DialogFlags.MODAL,
+                                       Gtk.MessageType.QUESTION, Gtk.ButtonsType.YES_NO, _('Erase stored history?'))
 
             if dialog.run() == Gtk.ResponseType.YES:
                 try:

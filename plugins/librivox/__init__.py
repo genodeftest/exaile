@@ -166,8 +166,9 @@ class LVPanel():
         self.treeview.append_column(self.column)
         self.treeview.connect("row-expanded", self.on_row_exp)
 
-        self.treeview.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, [
-                                      Gtk.TargetEntry.new('text/uri-list', 0, 0)], Gdk.DragAction.COPY)
+        self.treeview.drag_source_set(Gdk.ModifierType.BUTTON1_MASK,
+                                      [Gtk.TargetEntry.new('text/uri-list', 0, 0)],
+                                      Gdk.DragAction.COPY)
         self.treeview.connect("drag-data-get", self.drag_data_get)
         self.scrlw.add(self.treeview)
 

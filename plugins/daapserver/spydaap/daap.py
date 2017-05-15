@@ -470,9 +470,9 @@ class DAAPPlaylist(object):
 
     def tracks(self):
         """returns all the tracks in this playlist, as DAAPTrack objects"""
-        response = self.database.session.request("/databases/%s/containers/%s/items" % (self.database.id, self.id), {
-            'meta': daap_atoms
-        })
+        response = self.database.session.request(
+            "/databases/%s/containers/%s/items" % (self.database.id, self.id),
+            {'meta': daap_atoms})
         track_list = response.getAtom("mlcl").contains
         return [DAAPTrack(self.database, t) for t in track_list]
 

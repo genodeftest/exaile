@@ -226,14 +226,16 @@ class DaapAvahiInterface(GObject.GObject):  # derived from python-daap/examples
         self.services = {}
         self.menu = _menu
         self.bus = dbus.SystemBus()
-        self.server = dbus.Interface(self.bus.get_object(avahi.DBUS_NAME,
-                                                         avahi.DBUS_PATH_SERVER), avahi.DBUS_INTERFACE_SERVER)
+        self.server = dbus.Interface(
+            self.bus.get_object(avahi.DBUS_NAME, avahi.DBUS_PATH_SERVER),
+            avahi.DBUS_INTERFACE_SERVER)
         self.stype = '_daap._tcp'
         self.domain = 'local'
-        self.browser = dbus.Interface(self.bus.get_object(avahi.DBUS_NAME,
-                                                          self.server.ServiceBrowserNew(avahi.IF_UNSPEC, avahi.PROTO_UNSPEC,
-                                                                                        self.stype, self.domain, dbus.UInt32(0))),
-                                      avahi.DBUS_INTERFACE_SERVICE_BROWSER)
+        self.browser = dbus.Interface(
+            self.bus.get_object(
+                avahi.DBUS_NAME, self.server.ServiceBrowserNew(
+                    avahi.IF_UNSPEC, avahi.PROTO_UNSPEC, self.stype, self.domain, dbus.UInt32(0))),
+            avahi.DBUS_INTERFACE_SERVICE_BROWSER)
         self.browser.connect_to_signal('ItemNew', self.new_service)
         self.browser.connect_to_signal('ItemRemove', self.remove_service)
 
@@ -554,9 +556,12 @@ class DaapConnection(object):
                 try:
                     t.save(filename)
                 except CannotSendRequest:
-                    dialog = Gtk.MessageDialog(APP.window,
-                                               Gtk.DialogFlags.MODAL, Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
-                                               _("""This server does not support multiple connections.
+                    dialog = Gtk.MessageDialog(
+                        APP.window,
+                        Gtk.DialogFlags.MODAL,
+                        Gtk.MessageType.INFO,
+                        Gtk.ButtonsType.OK,
+                        _("""This server does not support multiple connections.
 You must stop playback before downloading songs."""))
 
 

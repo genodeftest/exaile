@@ -124,8 +124,8 @@ class ID3Format(BaseFormat):
             data = data[0]
 
         if tag == 'APIC':
-            frames = [id3.Frames[tag](encoding=3, mime=info.mime, type=info.type, desc=info.desc, data=info.data)
-                      for info in data]
+            frames = [id3.Frames[tag](encoding=3, mime=info.mime, type=info.type,
+                                      desc=info.desc, data=info.data) for info in data]
         elif tag == 'COMM':
             frames = [id3.COMM(encoding=3, text=d, desc='', lang='\x00\x00\x00') for d in data]
         elif tag == 'WOAR':

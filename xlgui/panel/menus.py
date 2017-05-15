@@ -144,8 +144,10 @@ def __create_files_panel_context_menu():
     items = []
     items.append(menu.simple_separator('fp-sep', after=['properties']))
     items.append(menuitems.OpenDirectoryMenuItem('open-directory', after=[items[-1].name]))
-    items.append(menuitems.TrashMenuItem('trash-tracks',
-                                         after=[items[-1].name], trash_tracks_func=trash_tracks_func))
+    items.append(
+        menuitems.TrashMenuItem(
+            'trash-tracks', after=[items[-1].name],
+            trash_tracks_func=trash_tracks_func))
 
     for item in items:
         item.register('files-panel-context-menu')
