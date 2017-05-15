@@ -122,11 +122,14 @@ MPRIS_INTROSPECTION = '''\
 
 
 class MprisPlugin:
+
     def enable(self, exaile):
         self.handler = MprisHandler(exaile)
+
     def disable(self, exaile):
         self.handler.disconnect()
         del self.handler
+
     def teardown(self, exaile):
         self.handler.teardown()
 
@@ -145,14 +148,17 @@ class MprisHandler:
         self.connection = None
         self.object = None
         self.registrations = []
-        Gio.bus_own_name(Gio.BusType.SESSION, 'org.mpris.MediaPlayer2.exaile', Gio.BusNameOwnerFlags.NONE, self._on_bus_acquired, None, None)
+        Gio.bus_own_name(Gio.BusType.SESSION, 'org.mpris.MediaPlayer2.exaile',
+                         Gio.BusNameOwnerFlags.NONE, self._on_bus_acquired, None, None)
 
     def _on_bus_acquired(self, connection, name):
         self.connection = connection
         self.object = obj = mprisobject.MprisObject(self.exaile, connection)
         helper = dbushelper.DBusHelper(obj)
-        self.registrations.append(connection.register_object('/org/mpris/MediaPlayer2', self.root_interface, helper.method_call, helper.get_property, helper.set_property))
-        self.registrations.append(connection.register_object('/org/mpris/MediaPlayer2', self.player_interface, helper.method_call, helper.get_property, helper.set_property))
+        self.registrations.append(connection.register_object(
+            '/org/mpris/MediaPlayer2', self.root_interface, helper.method_call, helper.get_property, helper.set_property))
+        self.registrations.append(connection.register_object(
+            '/org/mpris/MediaPlayer2', self.player_interface, helper.method_call, helper.get_property, helper.set_property))
 
     def disconnect(self):
         # XXX: Should probably cancel bus_own_name if it's still running.

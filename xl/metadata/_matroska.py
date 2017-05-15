@@ -40,16 +40,25 @@ from warnings import warn
 
 SINT, UINT, FLOAT, STRING, UTF8, DATE, MASTER, BINARY = range(8)
 
-class EbmlException(Exception): pass
-class EbmlWarning(Warning): pass
+
+class EbmlException(Exception):
+    pass
+
+
+class EbmlWarning(Warning):
+    pass
+
 
 class BinaryData(bytes):
+
     def __repr__(self):
         return "<BinaryData>"
+
 
 def bchr(n):
     """chr() that always returns bytes in Python 2 and 3"""
     return pack('B', n)
+
 
 class Ebml:
     """EBML parser.
@@ -67,8 +76,8 @@ class Ebml:
     def __del__(self):
         self.close()
 
-    ## File access.
-    ## These can be overridden to provide network support.
+    # File access.
+    # These can be overridden to provide network support.
 
     def open(self, location):
         """Open a location and set self.size."""
@@ -90,7 +99,7 @@ class Ebml:
     def close(self):
         self.file.close()
 
-    ## Element reading
+    # Element reading
 
     def readID(self):
         b = self.read(1)
@@ -161,7 +170,7 @@ class Ebml:
         else:
             raise EbmlException("don't know how to read %r-byte float" % length)
 
-    ## Parsing
+    # Parsing
 
     def parse(self, from_=0, to=None):
         """Parses EBML from `from_` (inclusive) to `to` (exclusive).
@@ -224,9 +233,10 @@ class Ebml:
         return node
 
 
-## GIO-specific code
+# GIO-specific code
 
 from gi.repository import Gio
+
 
 class GioEbml(Ebml):
     # NOTE: All seeks are faked using InputStream.skip because we need to use
@@ -265,7 +275,7 @@ class GioEbml(Ebml):
         self.buffer.close()
 
 
-## Matroska-specific code
+# Matroska-specific code
 
 # Interesting Matroska tags.
 # Tags not defined here are skipped while parsing.
@@ -343,12 +353,15 @@ MatroskaTags = {
     0x4485: ('TagBinary', BINARY),
 }
 
+
 def parse(location):
     return GioEbml(location, MatroskaTags).parse()
+
 
 def dump(location):
     from pprint import pprint
     pprint(parse(location))
+
 
 def dump_tags(location):
     from pprint import pprint
@@ -362,6 +375,7 @@ def dump_tags(location):
     length = info['Duration'][0] * timecodescale / 1e9
     print("Length = %s seconds" % length)
     pprint(segment['Tags'][0]['Tag'])
+
 
 def gio_location(location):
     """Convert location to GIO-compatible location.

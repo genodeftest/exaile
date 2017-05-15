@@ -63,7 +63,8 @@ class MoodbarPlugin:
             self.on_preview_device_enabled('', previewdevice)
 
     def on_gui_loaded(self):
-        self.main_controller = MoodbarController(self, xl.player.PLAYER, self.exaile.gui.main.progress_bar)
+        self.main_controller = MoodbarController(
+            self, xl.player.PLAYER, self.exaile.gui.main.progress_bar)
 
     def disable(self, exaile):
         if not self.main_controller:  # Disabled more than once or before gui_loaded
@@ -96,6 +97,7 @@ def format_time(seconds, time_format=_("{minutes}:{seconds:02}")):
 
 
 class MoodbarController:
+
     def __init__(self, plugin, player, orig_seekbar):
         self.plugin = plugin
         self.player = player
@@ -103,7 +105,8 @@ class MoodbarController:
         self.timer = self.seeking = False
 
         self.moodbar = moodbar = Moodbar()
-        moodbar.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON1_MOTION_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK)
+        moodbar.add_events(Gdk.EventMask.BUTTON_PRESS_MASK |
+                           Gdk.EventMask.BUTTON1_MOTION_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK)
         xlgui.guiutil.gtk_widget_replace(self.orig_seekbar, moodbar)
         moodbar.show()
         # TODO: If currently playing, this needs to run now as well:

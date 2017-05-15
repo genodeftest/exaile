@@ -91,7 +91,7 @@ class FilesPanel(panel.Panel):
         self.i = 0
 
         first_dir = Gio.File.new_for_commandline_arg(settings.get_option('gui/files_panel_dir',
-            xdg.homedir))
+                                                                         xdg.homedir))
         self.history = [first_dir]
         self.load_directory(first_dir, False)
 
@@ -161,15 +161,15 @@ class FilesPanel(panel.Panel):
         self.up = self.builder.get_object('files_up_button')
         self.up.connect('clicked', self.go_up)
         self.builder.get_object('files_refresh_button').connect('clicked',
-            self.refresh)
+                                                                self.refresh)
         self.builder.get_object('files_home_button').connect('clicked',
-            self.go_home)
+                                                             self.go_home)
 
         # Set up the location bar
         self.location_bar = self.builder.get_object('files_entry')
         self.location_bar.connect('changed', self.on_location_bar_changed)
         event.add_ui_callback(self.fill_libraries_location,
-            'libraries_modified', self.collection)
+                              'libraries_modified', self.collection)
         self.fill_libraries_location()
         self.entry = self.location_bar.get_children()[0]
         self.entry.connect('activate', self.entry_activate)
@@ -177,8 +177,8 @@ class FilesPanel(panel.Panel):
         # Set up the search entry
         self.filter = guiutil.SearchEntry(self.builder.get_object('files_search_entry'))
         self.filter.connect('activate', lambda *e:
-            self.load_directory(self.current, history=False,
-                keyword=unicode(self.filter.get_text(), 'utf-8')))
+                            self.load_directory(self.current, history=False,
+                                                keyword=unicode(self.filter.get_text(), 'utf-8')))
 
     def fill_libraries_location(self, *e):
         model = self.location_bar.get_model()
@@ -187,13 +187,15 @@ class FilesPanel(panel.Panel):
 
         if len(libraries) > 0:
             for library in libraries:
-                model.append([Gio.File.new_for_commandline_arg(library['location']).get_parse_name()])
+                model.append([Gio.File.new_for_commandline_arg(
+                    library['location']).get_parse_name()])
         self.location_bar.set_model(model)
 
     def on_location_bar_changed(self, widget, *args):
         # Find out which one is selected, if any.
         iter = self.location_bar.get_active_iter()
-        if not iter: return
+        if not iter:
+            return
         model = self.location_bar.get_model()
         location = model.get_value(iter, 0)
         if location != '':
@@ -280,7 +282,8 @@ class FilesPanel(panel.Panel):
             path = os.path.expanduser(path)
         f = Gio.file_parse_name(path)
         try:
-            ftype = f.query_info('standard::type', Gio.FileQueryInfoFlags.NONE, None).get_file_type()
+            ftype = f.query_info('standard::type', Gio.FileQueryInfoFlags.NONE,
+                                 None).get_file_type()
         except GLib.GError as e:
             logger.exception(e)
             self.entry.set_text(self.current.get_parse_name())
@@ -288,7 +291,7 @@ class FilesPanel(panel.Panel):
         if ftype != Gio.FileType.DIRECTORY:
             f = f.get_parent()
         self.load_directory(f)
-        
+
     def focus(self):
         self.tree.grab_focus()
 
@@ -344,7 +347,7 @@ class FilesPanel(panel.Panel):
         """
         name = {self.colname: 'filename', self.colsize: 'size'}[col]
         name = "gui/files_%s_col_width" % name
-        
+
         # this option gets triggered all the time, which is annoying when debugging,
         # so only set it when it actually changes
         w = col.get_width()
@@ -364,16 +367,16 @@ class FilesPanel(panel.Panel):
         self.current = directory
         try:
             infos = directory.enumerate_children('standard::is-hidden,'
-                'standard::name,standard::display-name,standard::type',
-                Gio.FileQueryInfoFlags.NONE, None)
+                                                 'standard::name,standard::display-name,standard::type',
+                                                 Gio.FileQueryInfoFlags.NONE, None)
         except GLib.Error as e:
             logger.exception(e)
-            if directory.get_path() != xdg.homedir: # Avoid infinite recursion.
+            if directory.get_path() != xdg.homedir:  # Avoid infinite recursion.
                 self.load_directory(
                     Gio.File.new_for_commandline_arg(xdg.homedir),
                     history, keyword, cursor_file)
             return
-        if self.current != directory: # Modified from another thread.
+        if self.current != directory:  # Modified from another thread.
             return
 
         settings.set_option('gui/files_panel_dir', directory.get_uri())
@@ -390,6 +393,7 @@ class FilesPanel(panel.Panel):
             if keyword and keyword.lower() not in low_name:
                 continue
             f = directory.get_child(info.get_name())
+
             def sortkey():
                 # HACK: Python 2 bug: strxfrm doesn't support unicode.
                 # https://bugs.python.org/issue2481
@@ -399,14 +403,14 @@ class FilesPanel(panel.Panel):
             if ftype == Gio.FileType.DIRECTORY:
                 subdirs.append(sortkey())
             elif any(low_name.endswith('.' + ext)
-                    for ext in metadata.formats):
+                     for ext in metadata.formats):
                 subfiles.append(sortkey())
 
         subdirs.sort()
         subfiles.sort()
 
         def idle():
-            if self.current != directory: # Modified from another thread.
+            if self.current != directory:  # Modified from another thread.
                 return
 
             model = self.model
@@ -426,14 +430,15 @@ class FilesPanel(panel.Panel):
                     cursor_row = row
                 row += 1
             for sortname, name, f in subfiles:
-                size = f.query_info('standard::size', Gio.FileQueryInfoFlags.NONE, None).get_size() // 1000
-                
+                size = f.query_info('standard::size', Gio.FileQueryInfoFlags.NONE,
+                                    None).get_size() // 1000
+
                 # locale.format_string does not support unicode objects
-                # correctly, so we call it with an str and convert the 
+                # correctly, so we call it with an str and convert the
                 # locale-dependent output to unicode.
                 size = locale.format_string('%d', size, True)
                 size = _('%s kB') % unicode(size, locale.getpreferredencoding())
-                
+
                 model.append((f, self.track, name, size, False))
                 if cursor_file and cursor_row == -1 and cursor_uri == f.get_uri():
                     cursor_row = row
@@ -449,7 +454,7 @@ class FilesPanel(panel.Panel):
             self.entry.set_text(directory.get_parse_name())
             if history:
                 self.back.set_sensitive(True)
-                self.history[self.i+1:] = [self.current]
+                self.history[self.i + 1:] = [self.current]
                 self.i = len(self.history) - 1
                 self.forward.set_sensitive(False)
             self.up.set_sensitive(bool(directory.get_parent()))
@@ -473,21 +478,23 @@ class FilesPanel(panel.Panel):
             Called when a drag source wants data for this drag operation
         """
         tracks = self.tree.get_selected_tracks()
-        if not tracks: return
+        if not tracks:
+            return
         for track in tracks:
             DragTreeView.dragged_data[track.get_loc_for_io()] = track
         uris = trax.util.get_uris_from_tracks(tracks)
         selection.set_uris(uris)
 
+
 class FilesDragTreeView(DragTreeView):
     """
         Custom DragTreeView to retrieve data from files
     """
-    
+
     def get_selection_empty(self):
         '''Returns True if there are no selected items'''
         return self.get_selection().count_selected_rows() == 0
-    
+
     def get_selection_is_computed(self):
         """
             Returns True if anything in the selection is a directory
@@ -498,10 +505,9 @@ class FilesDragTreeView(DragTreeView):
         for path in paths:
             if model[path][4]:
                 return True
-        
+
         return False
-        
-    
+
     def get_selected_tracks(self):
         """
             Returns the currently selected tracks
