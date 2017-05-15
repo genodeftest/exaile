@@ -41,11 +41,11 @@ def makeDAAPHandlerClass(server_name, cache, md_cache, container_cache):
             self.send_header('Cache-Control', 'no-cache')
             self.send_header('Accept-Ranges', 'bytes')
             self.send_header('Content-Language', 'en_us')
-            if kwargs.has_key('extra_headers'):
+            if 'extra_headers' in kwargs:
                 for k, v in kwargs['extra_headers'].iteritems():
                     self.send_header(k, v)
             try:
-                if type(data) == file:
+                if isinstance(data, file):
                     self.send_header("Content-Length", str(os.stat(data.name).st_size))
                 else:
                     self.send_header("Content-Length", len(data))
@@ -216,11 +216,11 @@ def makeDAAPHandlerClass(server_name, cache, md_cache, container_cache):
                 self.send_error(404)    # this can be caused by left overs from previous sessions
                 return
 
-            if (self.headers.has_key('Range')):
+            if ('Range' in self.headers):
                 rs = self.headers['Range']
                 m = re.compile('bytes=([0-9]+)-([0-9]+)?').match(rs)
                 (start, end) = m.groups()
-                if end != None:
+                if end is not None:
                     end = int(end)
                 else:
                     end = os.stat(fn).st_size

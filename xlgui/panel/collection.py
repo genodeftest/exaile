@@ -48,6 +48,7 @@ from xlgui import (
 )
 from xlgui.panel import menus
 from xlgui.widgets.common import DragTreeView
+from functools import reduce
 
 logger = logging.getLogger(__name__)
 
@@ -591,7 +592,7 @@ class CollectionPanel(panel.Panel):
         """
         previously_loaded = False  # was the subtree already loaded
         iter_sep = None
-        if parent == None:
+        if parent is None:
             depth = 0
         else:
             if self.model.iter_n_children(parent) != 1 or \

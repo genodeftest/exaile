@@ -260,7 +260,8 @@ class Collection(trax.TrackDB):
 
         for library in self.libraries.itervalues():
 
-            if not force_update and startup_only and not (library.monitored and library.startup_scan):
+            if not force_update and startup_only and not (
+                    library.monitored and library.startup_scan):
                 continue
 
             event.add_callback(self._progress_update, 'tracks_scanned',

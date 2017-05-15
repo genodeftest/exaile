@@ -63,7 +63,7 @@ class RatingWidget(Gtk.EventBox):
         """
             :param rating: the optional initial rating
             :type rating: int
-            :param player: If not None, this rating widget will automatically 
+            :param player: If not None, this rating widget will automatically
                            update to reflect the rating of the current song
             :type player: xl.player.ExailePlayer
         """
@@ -254,7 +254,7 @@ class RatingMenuItem(Gtk.MenuItem):
         """
             :param rating: the optional initial rating
             :type rating: int
-            :param player: If not None, this rating widget will automatically 
+            :param player: If not None, this rating widget will automatically
                            update to reflect the rating of the current song
             :type player: xl.player.ExailePlayer
         """
@@ -422,7 +422,7 @@ class RatingCellRenderer(Gtk.CellRendererPixbuf):
 
         x = cell_area.x + cell_area.width - pixbuf_width
         y = cell_area.y + cell_area.height - pixbuf_height
-        
+
         context.set_source_pixbuf(self.props.pixbuf, x, y)
         context.paint()
 '''

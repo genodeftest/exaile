@@ -331,7 +331,7 @@ class GroupTaggerTreeStore(Gtk.TreeStore, Gtk.TreeDragSource, Gtk.TreeDragDest):
     '''
         The tree model for grouptagger
 
-        Rows for categories: 
+        Rows for categories:
             [expanded, category name, False]
         Rows for groups:
             [selected, group name, True]

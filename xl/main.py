@@ -90,7 +90,7 @@ def create_argument_parser():
     group.add_argument("-n", "--next", dest="Next", action="store_true",
                        default=False, help=_("Play the next track"))
     group.add_argument("-p", "--prev", dest="Prev", action="store_true",
-                       default=False,   help=_("Play the previous track"))
+                       default=False, help=_("Play the previous track"))
     group.add_argument("-s", "--stop", dest="Stop", action="store_true",
                        default=False, help=_("Stop playback"))
     group.add_argument("-a", "--play", dest="Play", action="store_true",
@@ -606,7 +606,7 @@ class Exaile(object):
             t.start()
 
     def __mainloop(self, context):
-        while 1:
+        while True:
             try:
                 context.iteration(True)
             except Exception:
@@ -620,7 +620,7 @@ class Exaile(object):
 
     def get_user_agent_string(self, plugin_name=None):
         '''
-            Returns an approrpiately formatted User-agent string for 
+            Returns an approrpiately formatted User-agent string for
             web requests. When possible, plugins should use this to
             format user agent strings.
 

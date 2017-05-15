@@ -1407,7 +1407,8 @@ class FileCopyDialog(Gtk.Dialog):
         def cancel_copy(self):
             self.__cancel.cancel()
 
-    def __init__(self, file_uris, destination_uri, title, text=_("Saved %(count)s of %(total)s."), parent=None):
+    def __init__(self, file_uris, destination_uri, title, text=_(
+            "Saved %(count)s of %(total)s."), parent=None):
 
         self.file_uris = file_uris
         self.destination_uri = destination_uri

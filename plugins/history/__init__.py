@@ -89,7 +89,8 @@ class HistoryPlugin(object):
     def teardown(self, exaile):
         '''Called when exaile is exiting'''
 
-        if settings.get_option('plugin/history/save_on_exit', history_preferences.save_on_exit_default):
+        if settings.get_option('plugin/history/save_on_exit',
+                               history_preferences.save_on_exit_default):
             self.history_playlist.save_to_location(self.history_loc)
             settings.set_option('plugin/history/shown', self.is_shown())
         else:

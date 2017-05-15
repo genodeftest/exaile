@@ -2,11 +2,11 @@
 '''
     Simple program that uses the 'bpmdetect' GStreamer plugin to detect
     the BPM of a song, and outputs that to console.
-    
+
     Requires GStreamer 1.x, PyGObject 1.x, and gst-plugins-bad
-    
+
     Copyright (C) 2015 Dustin Spicuzza
-    
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as
     published by the Free Software Foundation.
@@ -28,7 +28,7 @@ def detect_bpm(uri, on_complete):
     '''
         Detects the BPM of a song using GStreamer's bpmdetect plugin
 
-        .. note:: The plugin emits the BPM at various times during 
+        .. note:: The plugin emits the BPM at various times during
                   song processing, but the bpm detector accumulates
                   the results so this will only return the last
                   result.

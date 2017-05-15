@@ -95,7 +95,7 @@ parse = functools.partial(zip,
 
 class DaapAvahiInterface(GObject.GObject):  # derived from python-daap/examples
     """
-        Handles detection of DAAP shares via Avahi and manages the menu 
+        Handles detection of DAAP shares via Avahi and manages the menu
         showing the shares.
 
         Fires a "connect" signal when a menu item is clicked.
@@ -311,12 +311,13 @@ class DaapManager:
 
         self.history = DaapHistory(5, menu=hmenu, callback=self.connect_share)
 
-    def connect_share(self, obj, (name, address, port, svc)):
+    def connect_share(self, obj, xxx_todo_changeme):
         '''
             This function is called when a user wants to connec to
         a DAAP share.  It creates a new panel for the share, and
         requests a track list.
         '''
+        (name, address, port, svc) = xxx_todo_changeme
         conn = DaapConnection(name, address, port)
 
         conn.connect()
@@ -498,7 +499,7 @@ class DaapConnection(object):
         """
             Get the track list from a DAAP database
         """
-        if reset or self.tracks == None:
+        if reset or self.tracks is None:
             if self.database is None:
                 self.database = self.session.library()
             self.tracks = self.database.tracks()

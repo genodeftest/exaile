@@ -704,7 +704,7 @@ class ASXConverter(FormatConverter):
 
         def start(self, tag, attributes):
             """
-                Checks the ASX version and stores 
+                Checks the ASX version and stores
                 the URI of the current track
             """
             depth = len(self._stack)
@@ -1156,7 +1156,7 @@ class Playlist(object):
 
     def get_next(self):
         '''
-            Retrieves the next track that will be played. Does not 
+            Retrieves the next track that will be played. Does not
             actually set the position. When you call next(), it should
             return the same track, even in random shuffle modes.
 
@@ -1521,7 +1521,7 @@ class Playlist(object):
             Get (start, end, step) tuple from slice object.
         """
         (start, end, step) = i.indices(len(self))
-        if i.step == None:
+        if i.step is None:
             step = 1
         return (start, end, step)
 
@@ -1863,7 +1863,7 @@ class SmartPlaylist(object):
         }
 
         for param in self.search_params:
-            if type(param) == str:
+            if isinstance(param, str):
                 params += [param]
                 continue
             (field, op, value) = param
@@ -1898,20 +1898,20 @@ class SmartPlaylist(object):
                     {
                         'field': field,
                         'value': value,
-                        'op':    op[0]
+                        'op': op[0]
                     }
             elif op == "!=" or op == "!==" or op == "!~":
                 s += '! %(field)s%(op)s"%(value)s"' % \
                     {
                         'field': field,
                         'value': value,
-                        'op':    op[1:]
+                        'op': op[1:]
                     }
             elif op == "><":
                 s += '( %(field)s>%(value1)s ' \
                     '%(field)s<%(value2)s )' % \
                     {
-                        'field':  field,
+                        'field': field,
                         'value1': value[0],
                         'value2': value[1]
                     }
@@ -1930,7 +1930,7 @@ class SmartPlaylist(object):
                     {
                         'field': field,
                         'value': value,
-                        'op':    op
+                        'op': op
                     }
 
             params.append(s)

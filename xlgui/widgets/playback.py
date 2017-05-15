@@ -185,7 +185,8 @@ class PlaybackProgressBar(Gtk.ProgressBar):
 class Anchor(int):
     __gtype__ = GObject.TYPE_INT
 
-for i, a in enumerate('CENTER NORTH NORTH_WEST NORTH_EAST SOUTH SOUTH_WEST SOUTH_EAST WEST EAST'.split()):
+for i, a in enumerate(
+        'CENTER NORTH NORTH_WEST NORTH_EAST SOUTH SOUTH_WEST SOUTH_EAST WEST EAST'.split()):
     setattr(Anchor, a, Anchor(i))
 
 

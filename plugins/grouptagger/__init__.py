@@ -245,7 +245,8 @@ class GroupTaggerPlugin(object):
         '''Called when a new track starts'''
         self.set_display_track(track)
 
-    def on_playlist_context_select_all_menu(self, menu, display_name, playlist_view, context, exaile):
+    def on_playlist_context_select_all_menu(
+            self, menu, display_name, playlist_view, context, exaile):
         '''Called when 'Select tracks with same tags' is selected'''
         tracks = context['selected-tracks']
         groups = set()
@@ -258,7 +259,8 @@ class GroupTaggerPlugin(object):
         else:
             dialogs.error(None, _('No categorization tags found in selected tracks'))
 
-    def on_playlist_context_select_custom_menu(self, menu, display_name, playlist_view, context, exaile):
+    def on_playlist_context_select_custom_menu(
+            self, menu, display_name, playlist_view, context, exaile):
         '''Called when 'select tracks with similar tags (custom)' is selected'''
         tracks = context['selected-tracks']
         groups = set()

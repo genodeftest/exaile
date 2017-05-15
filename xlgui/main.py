@@ -303,9 +303,9 @@ class MainWindow(GObject.GObject):
             Connects the various events to their handlers
         """
         self.builder.connect_signals({
-            'on_configure_event':   self.configure_event,
+            'on_configure_event': self.configure_event,
             'on_window_state_event': self.window_state_change_event,
-            'on_delete_event':      self.on_delete_event,
+            'on_delete_event': self.on_delete_event,
             'on_playpause_button_clicked': self._on_playpause_button,
             'on_next_button_clicked':
                 lambda *e: player.QUEUE.next(),

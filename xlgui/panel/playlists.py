@@ -227,7 +227,7 @@ class BasePlaylistPanelMixin(GObject.GObject):
 
     def add_new_playlist(self, tracks=[], name=None):
         """
-            Adds a new playlist to the list of playlists. If name is 
+            Adds a new playlist to the list of playlists. If name is
             None or the name conflicts with an existing playlist, the
             user will be queried for a new name.
 
@@ -493,14 +493,12 @@ class PlaylistsPanel(panel.Panel, BasePlaylistPanelMixin):
         self.custom = self.model.append(None, [self.folder,
                                                _("Custom Playlists"), None])
 
-        names = self.smart_manager.playlists[:]
-        names.sort()
+        names = sorted(self.smart_manager.playlists[:])
         for name in names:
             self.model.append(self.smart, [self.playlist_image, name,
                                            self.smart_manager.get_playlist(name)])
 
-        names = self.playlist_manager.playlists[:]
-        names.sort()
+        names = sorted(self.playlist_manager.playlists[:])
         for name in names:
             playlist = self.playlist_manager.get_playlist(name)
             self.playlist_nodes[playlist] = self.model.append(
@@ -704,7 +702,7 @@ class PlaylistsPanel(panel.Panel, BasePlaylistPanelMixin):
             if len(tracks) > 0:
                 self.add_new_playlist(tracks)
 
-    def drag_data_delete(self,  tv, context):
+    def drag_data_delete(self, tv, context):
         """
             Called after a drag data operation is complete
             and we want to delete the source data
@@ -745,7 +743,7 @@ class PlaylistsPanel(panel.Panel, BasePlaylistPanelMixin):
             hovering over playlists causes the copy action to occur
             hovering over tracks within the same playlist causes the move
                 action to occur
-            hovering over tracks within different playlist causes the move 
+            hovering over tracks within different playlist causes the move
                 action to occur
 
             Called on the destination widget
