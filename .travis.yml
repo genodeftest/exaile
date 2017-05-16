@@ -5,8 +5,12 @@ services:
 before_install:
 - docker pull exaile/exaile-testimg:latest
 
+install:
+- "pip install pycodestyle"
+
 script:
 - docker run --rm -it -e HOME=/home -v $(pwd):/app -w /app exaile/exaile-testimg:latest make test
+- "pycodestyle --ignore=E241,E265,E266,E402 --statistics --count ."
 
 notifications:
   irc:
