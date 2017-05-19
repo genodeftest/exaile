@@ -53,12 +53,8 @@ class AsfFormat(BaseFormat):
         # unicode so things don't break
         tag = super(AsfFormat, self)._get_tag(raw, tag_name)
         if isinstance(tag, list):
-            attrs = [
-                asf.ASFUnicodeAttribute,
-                asf.ASFDWordAttribute,
-                asf.ASFQWordAttribute,
-                asf.ASFWordAttribute,
-            ]
+            attrs = [asf.ASFUnicodeAttribute, asf.ASFDWordAttribute,
+                     asf.ASFQWordAttribute, asf.ASFWordAttribute]
 
             def __process_tag(any_tag):
                 for attrtype in attrs:

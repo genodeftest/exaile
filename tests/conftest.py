@@ -33,44 +33,33 @@ def exaile_test_cleanup():
 #
 
 
-TrackData = collections.namedtuple(
-    'TrackData',
-    ['ext', 'filename', 'uri', 'size', 'writeable', 'has_cover', 'has_tags'],
-)
+TrackData = collections.namedtuple('TrackData', [
+    'ext', 'filename', 'uri', 'size', 'writeable',
+    'has_cover', 'has_tags'
+])
 
 
 def _fname(ext):
     local_path = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            'data',
-            'music',
-            'delerium',
-            'chimera',
-            '05 - Truly',
-        )
-        + os.extsep
-        + ext
-    )
+        os.path.join(os.path.dirname(__file__), 'data', 'music', 'delerium',
+                     'chimera', '05 - Truly') + os.extsep + ext)
 
     return ext, local_path, Gio.File.new_for_path(local_path).get_uri()
 
 
 _all_tracks = [
-    # fmt: off
-    TrackData(*_fname('aac'),  size=9404,  writeable=True, has_cover=True, has_tags=True),
-    TrackData(*_fname('aiff'), size=21340, writeable=True, has_cover=True, has_tags=True),
-    TrackData(*_fname('au'),   size=16425, writeable=False, has_cover=False, has_tags=False),
+    TrackData(*_fname('aac'), size=9404, writeable=True, has_cover=True, has_tags=True),
+    TrackData(*_fname('aiff'), size=16472, writeable=False, has_cover=False, has_tags=False),
+    TrackData(*_fname('au'), size=16425, writeable=False, has_cover=False, has_tags=False),
     TrackData(*_fname('flac'), size=20668, writeable=True, has_cover=True, has_tags=True),
-    TrackData(*_fname('mp3'),  size=7495,  writeable=True, has_cover=True, has_tags=True),
-    TrackData(*_fname('mp4'),  size=7763,  writeable=True, has_cover=True, has_tags=True),
-    TrackData(*_fname('mpc'),  size=6650,  writeable=True, has_cover=False, has_tags=True),
-    TrackData(*_fname('ogg'),  size=17303, writeable=True, has_cover=True, has_tags=True),
-    TrackData(*_fname('spx'),  size=1000,  writeable=True, has_cover=False, has_tags=True),
-    TrackData(*_fname('wav'),  size=46124, writeable=False, has_cover=False, has_tags=False),
-    TrackData(*_fname('wma'),  size=4929,  writeable=True, has_cover=False, has_tags=True),
-    TrackData(*_fname('wv'),   size=32293, writeable=True, has_cover=False, has_tags=True),
-    # fmt: on
+    TrackData(*_fname('mp3'), size=7495, writeable=True, has_cover=True, has_tags=True),
+    TrackData(*_fname('mp4'), size=7763, writeable=True, has_cover=True, has_tags=True),
+    TrackData(*_fname('mpc'), size=6650, writeable=True, has_cover=False, has_tags=True),
+    TrackData(*_fname('ogg'), size=17303, writeable=True, has_cover=True, has_tags=True),
+    TrackData(*_fname('spx'), size=1000, writeable=True, has_cover=False, has_tags=True),
+    TrackData(*_fname('wav'), size=46124, writeable=False, has_cover=False, has_tags=False),
+    TrackData(*_fname('wma'), size=4929, writeable=True, has_cover=False, has_tags=True),
+    TrackData(*_fname('wv'), size=32293, writeable=True, has_cover=False, has_tags=True),
 ]
 
 

@@ -186,15 +186,10 @@ class Transcoder(object):
 
     def start_transcode(self):
         self._construct_encoder()
-        elements = [
-            self.input,
-            "decodebin name=\"decoder\"",
-            "audioconvert",
-            self.encoder,
-            self.output,
-        ]
+        elements = [self.input, "decodebin name=\"decoder\"", "audioconvert",
+                    self.encoder, self.output]
         pipestr = " ! ".join(elements)
-        logger.info("Starting GStreamer decoder with pipestring: %s", pipestr)
+        logger.info("Starting GStreamer decoder with pipestring: %s" % pipestr)
         pipe = Gst.parse_launch(pipestr)
         self.pipe = pipe
         self.bus = pipe.get_bus()

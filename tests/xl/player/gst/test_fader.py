@@ -10,6 +10,7 @@ FadingOut = FadeState.FadingOut
 
 
 class FakeStream(object):
+
     def __init__(self):
         self.reset()
 
@@ -33,11 +34,12 @@ class FakeStream(object):
 
 
 class FakeTrack(object):
+
     def __init__(self, start_off, stop_off, tracklen):
         self.tags = {
             '__startoffset': start_off,
             '__stopoffset': stop_off,
-            '__length': tracklen,
+            '__length': tracklen
         }
 
     def get_tag_raw(self, t):
@@ -82,25 +84,25 @@ TmEx = 2
 
     # Test fading in
     [
-        (0, 0,  FadingIn, TmEx, 'play', 0, 2, None, None),
+        (0, 0, FadingIn, TmEx, 'play', 0, 2, None, None),
         (1, 50, FadingIn, TmEx, 'execute'),
-        (3, 100, NoFade,  None, 'execute'),
-        (4, 100, NoFade,  None),
-        (5, 100, NoFade,  None, 'stop'),
-        (6, 100, NoFade,  None),
+        (3, 100, NoFade, None, 'execute'),
+        (4, 100, NoFade, None),
+        (5, 100, NoFade, None, 'stop'),
+        (6, 100, NoFade, None),
     ],
 
     # Test fading in: pause in middle
     [
-        (0, 0,  FadingIn, TmEx, 'play', 0, 2, None, None),
+        (0, 0, FadingIn, TmEx, 'play', 0, 2, None, None),
         (1, 50, FadingIn, TmEx, 'execute'),
         (1, 50, FadingIn, None, 'pause'),
         (1, 50, FadingIn, TmEx, 'unpause'),
         (1, 50, FadingIn, TmEx, 'execute'),
-        (3, 100, NoFade,  None, 'execute'),
-        (4, 100, NoFade,  None),
-        (5, 100, NoFade,  None, 'stop'),
-        (6, 100, NoFade,  None),
+        (3, 100, NoFade, None, 'execute'),
+        (4, 100, NoFade, None),
+        (5, 100, NoFade, None, 'stop'),
+        (6, 100, NoFade, None),
     ],
 
     # Test fading in past the fade point
@@ -113,24 +115,24 @@ TmEx = 2
 
     # Test fading out
     [
-        (3, 100, Normal,    TmSt, 'play', None, None, 4, 6),
+        (3, 100, Normal, TmSt, 'play', None, None, 4, 6),
         (4, 100, FadingOut, TmEx, 'start'),
-        (5, 50,  FadingOut, TmEx, 'execute'),
-        (6, 0,   FadingOut, TmEx, 'execute'),
-        (6.1, 0, NoFade,    None, 'execute'),
-        (7,   0, NoFade,    None),
+        (5, 50, FadingOut, TmEx, 'execute'),
+        (6, 0, FadingOut, TmEx, 'execute'),
+        (6.1, 0, NoFade, None, 'execute'),
+        (7, 0, NoFade, None),
     ],
 
     # Test all of them
     [
-        (0, 0,  FadingIn,   TmEx, 'play', 0, 2, 4, 6),
-        (1, 50, FadingIn,   TmEx, 'execute'),
-        (3, 100, Normal,    TmSt, 'execute'),
+        (0, 0, FadingIn, TmEx, 'play', 0, 2, 4, 6),
+        (1, 50, FadingIn, TmEx, 'execute'),
+        (3, 100, Normal, TmSt, 'execute'),
         (4, 100, FadingOut, TmEx, 'start'),
-        (5, 50,  FadingOut, TmEx, 'execute'),
-        (6, 0,   FadingOut, TmEx, 'execute'),
-        (6.1, 0, NoFade,    None, 'execute'),
-        (7,   0, NoFade,    None),
+        (5, 50, FadingOut, TmEx, 'execute'),
+        (6, 0, FadingOut, TmEx, 'execute'),
+        (6.1, 0, NoFade, None, 'execute'),
+        (7, 0, NoFade, None),
     ],
 
     # Test fading in with startoffset
@@ -204,40 +206,38 @@ def test_calculate_fades():
         # fmt: off
         
         # one is zero/none
-        (0, 4, 0, 0, 10,        0, 0, 6, 10),
-        (None, 4, 0, 0, 10,     0, 0, 6, 10),
+        (0, 4, 0, 0, 10, 0, 0, 6, 10),
+        (None, 4, 0, 0, 10, 0, 0, 6, 10),
 
         # other is zero/none
-        (4, 0, 0, 0, 10,        0, 4, 10, 10),
-        (4, None, 0, 0, 10,     0, 4, 10, 10),
+        (4, 0, 0, 0, 10, 0, 4, 10, 10),
+        (4, None, 0, 0, 10, 0, 4, 10, 10),
 
         # both are equal
-        (4, 4, 0, 0, 10,        0, 4, 6, 10),
+        (4, 4, 0, 0, 10, 0, 4, 6, 10),
 
         # both are none
-        (0, 0, 0, 0, 10,        0, 0, 10, 10),
-        (None, None, 0, 0, 10,  0, 0, 10, 10),
+        (0, 0, 0, 0, 10, 0, 0, 10, 10),
+        (None, None, 0, 0, 10, 0, 0, 10, 10),
 
         # Bigger than playlen: all three cases
-        (0, 4, 0, 0, 2,         0, 0, 0, 2),
-        (4, 0, 0, 0, 2,         0, 2, 2, 2),
-        (4, 4, 0, 0, 2,         0, 1, 1, 2),
+        (0, 4, 0, 0, 2, 0, 0, 0, 2),
+        (4, 0, 0, 0, 2, 0, 2, 2, 2),
+        (4, 4, 0, 0, 2, 0, 1, 1, 2),
 
         # With start offset
-        (4, 4, 1, 0, 10,        1, 5, 6, 10),
+        (4, 4, 1, 0, 10, 1, 5, 6, 10),
 
         # With stop offset
-        (4, 4, 0, 9, 10,        0, 4, 5, 9),
+        (4, 4, 0, 9, 10, 0, 4, 5, 9),
 
         # With both
-        (2, 2, 1, 9, 10,        1, 3, 7, 9),
+        (2, 2, 1, 9, 10, 1, 3, 7, 9),
 
         # With both, constrained
-        (4, 4, 4, 8, 10,        4, 6, 6, 8),
-        (2, 4, 4, 7, 10,        4, 5, 5, 7),
-        (4, 2, 4, 7, 10,        4, 6, 6, 7),
-        
-        # fmt: on
+        (4, 4, 4, 8, 10, 4, 6, 6, 8),
+        (2, 4, 4, 7, 10, 4, 5, 5, 7),
+        (4, 2, 4, 7, 10, 4, 6, 6, 7),
     ]
 
     i = 0
