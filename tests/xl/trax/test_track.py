@@ -107,7 +107,7 @@ class TestTrack(object):
         # check disk tag list
         assert set(tr.list_tags_disk()) == disk_tags
 
-    ## Creation
+    # Creation
     def test_flyweight(self, test_track):
         """There can only be one object based on a url in args"""
         t1 = track.Track(test_track.filename)
@@ -149,7 +149,7 @@ class TestTrack(object):
         assert tr.get_local_path()
         assert tr.exists()
 
-    ## Information
+    # Information
     def test_local_type(self, test_track):
         tr = track.Track(test_track.filename)
         assert tr.get_type() == 'file'
@@ -339,7 +339,7 @@ class TestTrack(object):
         with pytest.raises(ValueError):
             tr.set_rating('foo')
 
-    ## Tag Getting helper methods
+    # Tag Getting helper methods
     def test_split_numerical_none(self):
         assert track.Track.split_numerical(None) == (None, 0)
 
@@ -392,7 +392,7 @@ class TestTrack(object):
         retval = u'The Hello Woþλda The Hëllò Wóþλdâ'
         assert track.Track.strip_marks(value) == retval
 
-    ## Sort tags
+    # Sort tags
     def test_get_sort_tag_no_join(self):
         tr = track.Track('/foo')
         value = u'hello'
@@ -469,7 +469,7 @@ class TestTrack(object):
         tr.set_tag_raw('coverart', val)
         assert tr.get_tag_sort('coverart') == ret
 
-    ## Display Tags
+    # Display Tags
     def test_get_display_tag_loc(self):
         tr = track.Track('/foo')
         assert tr.get_tag_display('__loc') == '/foo'
@@ -533,7 +533,7 @@ class TestTrack(object):
         tr.set_tag_raw('artist', [u'foo', u'bar'])
         assert tr.get_tag_display('artist', join=False) == [u'foo', u'bar']
 
-    ## Sort tags
+    # Sort tags
     def test_get_search_tag_loc(self):
         tr = track.Track('/foo')
         assert tr.get_tag_search('__loc') == '__loc=="file:///foo"'
