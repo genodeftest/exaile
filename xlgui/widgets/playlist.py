@@ -694,7 +694,6 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
 
         self.menu = PlaylistContextMenu(self)
         self.header_menu = menu.ProviderMenu('playlist-columns-menu', self)
-        self.header_menu.attach_to_widget(self)
 
         self.dragging = False
         self.pending_event = None
@@ -709,8 +708,7 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
         self.set_fixed_height_mode(True)  # MASSIVE speedup - don't disable this!
         self.set_rules_hint(True)
         self.set_enable_search(True)
-        self.selection = self.get_selection()
-        self.selection.set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
 
         self._filter_matcher = None
 
@@ -730,7 +728,9 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
         event.add_ui_callback(self.on_playback_start, "playback_track_start", self.player)
         self.connect("cursor-changed", self.on_cursor_changed)
         self.connect("row-activated", self.on_row_activated)
-        self.connect("key-press-event", self.on_key_press_event)
+        self.connect("popup-menu", self.__on_popup_menu)
+        self.connect("button-press-event", self.__on_button_press_event)
+        self.connect("key-press-event", self.__on_key_press_event)
 
         self.connect("drag-begin", self.on_drag_begin)
         self.connect("drag-drop", self.on_drag_drop)
@@ -883,11 +883,12 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
             self.append_column(playlist_column)
             header = playlist_column.get_widget()
             header.show()
+            header.get_ancestor(Gtk.Button).connect('popup-menu',
+                                                    self.__on_header_popup_menu,
+                                                    column)
             header.get_ancestor(Gtk.Button).connect('button-press-event',
-                                                    self.on_header_button_press)
-
-            header.get_ancestor(Gtk.Button).connect('key-press-event',
-                                                    self.on_header_key_press_event)
+                                                    self.__on_header_button_press,
+                                                    column)
 
     def _setup_filter(self):
         '''Call this anytime after you call set_model()'''
@@ -926,10 +927,39 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
             for path in info[1]:
                 selection.select_path(path)
 
-    def on_header_button_press(self, widget, event):
-        if event.button == Gdk.BUTTON_SECONDARY:
-            self.header_menu.popup(None, None, None, None, event.button, event.time)
+    @staticmethod
+    def __menu_detach_func(_menu, _widget):
+        """ Ignores when a menu is being detached """
+        pass
+
+    def __do_popup_header_menu(self, widget, event, current_column):
+        old_attached_widget = self.header_menu.get_attach_widget()
+        if old_attached_widget is None or old_attached_widget is not widget:
+            if old_attached_widget:
+                self.header_menu.detach()
+            self.header_menu.attach_to_widget(widget, self.__menu_detach_func)
+
+
+        if event:
+            button = event.button
+            event_time = event.time
+            position_func = None
+        else:
+            button = 0
+            event_time = Gtk.get_current_event_time()
+            position_func = guiutil.position_menu
+
+        self.header_menu.popup(None, None, position_func, widget, button, event_time)
+
+    def __on_header_popup_menu(self, widget, current_column):
+        self.__do_popup_header_menu(widget, None, current_column)
+        return True
+
+    def __on_header_button_press(self, widget, event, current_column):
+        if event.triggers_context_menu():
+            self.__do_popup_header_menu(widget, event, current_column)
             return True
+        return False
 
     def on_columns_changed(self, widget):
         columns = [c.name for c in self.get_columns()]
@@ -1006,7 +1036,7 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
                 self._insert_focusing = False
             GLib.idle_add(_set_cursor)
 
-    def do_button_press_event(self, e):
+    def __on_button_press_event(self, widget, event):
         """
             Adds some custom selection work to
             1) unselect all rows if clicking an empty area,
@@ -1024,11 +1054,12 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
 
         # need this to workaround bug in GTK+ on OSX when dragging/dropping
         # -> https://bugzilla.gnome.org/show_bug.cgi?id=722815
+        # TODO: Still needed on Gtk+ 3?
         if self._hack_is_osx:
-            self._hack_osx_control_mask = True if e.state & Gdk.ModifierType.CONTROL_MASK else False
+            self._hack_osx_control_mask = True if event.state & Gdk.ModifierType.CONTROL_MASK else False
 
         selection = self.get_selection()
-        pathtuple = self.get_path_at_pos(int(e.x), int(e.y))
+        pathtuple = self.get_path_at_pos(int(event.x), int(event.y))
         # We only need the tree path if present
         if pathtuple:
             path = pathtuple[0]
@@ -1036,35 +1067,32 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
         else:
             path = None
 
+        if path and event.triggers_context_menu():
+            # Select the path on which the user clicked if not selected yet
+            if not selection.path_is_selected(path):
+                # We don't unselect all other items if Control is active
+                if not event.state & Gdk.ModifierType.CONTROL_MASK:
+                    selection.unselect_all()
+                selection.select_path(path)
+            self.do_popup_menu(widget, event)
+            return True
+
         # We unselect all selected items if the user clicks on an empty
         # area of the treeview and no modifier key is active
-        if not e.state & Gtk.accelerator_get_default_mod_mask() and not path:
+        if not event.state & Gtk.accelerator_get_default_mod_mask() and not path:
             selection.unselect_all()
+            return True
 
-        if path and e.type == Gdk.EventType.BUTTON_PRESS:
+        if path and event.type == Gdk.EventType.BUTTON_PRESS:
             # Prevent unselection of all except the clicked item on left
             # clicks, required to preserve the selection for DnD
-            if e.button == Gdk.BUTTON_PRIMARY \
-                    and not e.state & Gtk.accelerator_get_default_mod_mask() \
+            if event.button == Gdk.BUTTON_PRIMARY \
+                    and not event.state & Gtk.accelerator_get_default_mod_mask() \
                     and selection.path_is_selected(path):
                 selection.set_select_function(lambda *args: False, None)
                 self.pending_event = (path, col)
 
-            # Open the context menu on right clicks
-            if e.button == Gdk.BUTTON_SECONDARY:
-                # Select the path on which the user clicked if not selected yet
-                if not selection.path_is_selected(path):
-                    # We don't unselect all other items if Control is active
-                    if not e.state & Gdk.ModifierType.CONTROL_MASK:
-                        selection.unselect_all()
-
-                    selection.select_path(path)
-
-                self.menu.popup(None, None, None, None, e.button, e.time)
-
-                return True
-
-        return Gtk.TreeView.do_button_press_event(self, e)
+        return False
 
     def do_button_release_event(self, e):
         """
@@ -1083,11 +1111,23 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
 
         return Gtk.TreeView.do_button_release_event(self, e)
 
-    def on_key_press_event(self, widget, event):
-        if event.keyval == Gdk.KEY_Menu:
-            self.menu.popup(None, None, None, None, 0, event.time)
-            return True
+    def do_popup_menu(self, widget, event):
+        if event:
+            button = event.button
+            event_time = event.time
+        else:
+            button = 0
+            event_time = Gtk.get_current_event_time()
+        self.menu.popup(None, None, None, None, button, event_time)
 
+    def __on_popup_menu(self, widget):
+        self.do_popup_menu(widget, None)
+        return True
+
+    def __on_key_press_event(self, widget, event):
+        if event.keyval == Gdk.KEY_Menu:
+            self.do_popup_menu(widget, None)
+            return True
         elif event.keyval == Gdk.KEY_Delete:
             indexes = [x[0] for x in self.get_selected_paths()]
             if indexes and indexes == range(indexes[0], indexes[0] + len(indexes)):
@@ -1095,13 +1135,8 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
             else:
                 for i in indexes[::-1]:
                     del self.playlist[i]
-
-    def on_header_key_press_event(self, widget, event):
-        if event.keyval == Gdk.KEY_Menu:
-            # Open context menu for selecting visible columns
-            m = menu.ProviderMenu('playlist-columns-menu', self)
-            m.popup(None, None, None, None, 0, event.time)
             return True
+        return False
 
     ### DND handlers ###
     # Source
