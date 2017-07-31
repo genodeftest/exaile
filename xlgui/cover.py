@@ -148,7 +148,7 @@ class CoverManager(GObject.GObject):
         # Map of album identifiers and model paths
         self.model_path_cache = {}
         self.menu = CoverMenu(self)
-        self.menu.attach_to_widget(self.previews_box, lambda menu, widget: True)
+        self.menu.attach_to_widget(self.previews_box)
 
         self.progress_bar = builder.get_object('progressbar')
         self.progress_bar.set_text(_('Collecting albums and covers...'))
@@ -425,18 +425,6 @@ class CoverManager(GObject.GObject):
         """
         self.show_cover()
 
-    def on_previews_box_button_press_event(self, widget, e):
-        """
-            Shows the cover menu upon click
-        """
-        path = self.previews_box.get_path_at_pos(int(e.x), int(e.y))
-
-        if path:
-            self.previews_box.select_path(path)
-
-            if e.button == Gdk.BUTTON_SECONDARY:
-                self.menu.popup(None, None, None, None, 3, e.time)
-
     def on_previews_box_popup_menu(self, menu):
         """
             Shows the cover menu upon keyboard interaction
@@ -551,12 +539,13 @@ class CoverWidget(Gtk.EventBox):
             :param image: the image to wrap
             :type image: :class:`Gtk.Image`
         """
-        GObject.GObject.__init__(self)
+        Gtk.EventBox.__init__(self)
 
         self.image = image
         self.cover_data = None
         self.menu = CoverMenu(self)
         self.filename = None
+        self.set_can_focus(True)
 
         guiutil.gtk_widget_replace(image, self)
         self.add(self.image)
@@ -679,17 +668,25 @@ class CoverWidget(Gtk.EventBox):
 
         self.__drag_source_enabled = enabled
 
-    def do_button_press_event(self, event):
+    def NOT_do_button_press_event(self, event):
         """
             Called when someone clicks on the cover widget
         """
+        print("do_button_press_event")
         if self.__track is None or self.get_toplevel() is None:
-            return
-
-        if event.type == Gdk.EventType._2BUTTON_PRESS:
+            return False
+        if event.button == Gdk.BUTTON_PRIMARY and \
+                event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS:
             self.show_cover()
-        elif event.button == Gdk.BUTTON_SECONDARY:
-            self.menu.popup(event)
+            return True
+        return False
+
+    def do_popup_menu(self):
+        if self.__track is None or self.get_toplevel() is None:
+            return False
+        print("do_popup_menu")
+        self.menu.popup(None)
+        return True
 
     def do_expose_event(self, event):
         """

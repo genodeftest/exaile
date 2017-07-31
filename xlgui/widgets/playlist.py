@@ -694,6 +694,7 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
 
         self.menu = PlaylistContextMenu(self)
         self.header_menu = menu.ProviderMenu('playlist-columns-menu', self)
+        self.header_selected_column = None
 
         self.dragging = False
         self.pending_event = None
@@ -911,10 +912,13 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
         if firstpath:
             topindex = firstpath[0][0]
 
+        # TODO: We need something better than removing and re-adding all
+        # columns every time something changes here.
         self.disconnect(self.columns_changed_id)
         columns = self.get_columns()
         for col in columns:
             self.remove_column(col)
+            col.destroy()
 
         self._setup_columns()
         self.columns_changed_id = self.connect("columns-changed",
@@ -939,6 +943,7 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
                 self.header_menu.detach()
             self.header_menu.attach_to_widget(widget, self.__menu_detach_func)
 
+        self.header_selected_column = current_column
 
         if event:
             button = event.button
@@ -948,6 +953,7 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
             button = 0
             event_time = Gtk.get_current_event_time()
             position_func = guiutil.position_menu
+            # TODO: fix broken menu scroll position on keyboard activation
 
         self.header_menu.popup(None, None, position_func, widget, button, event_time)
 
@@ -985,6 +991,11 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
 
     def on_option_set(self, typ, obj, data):
         if data == "gui/columns" or data == 'gui/playlist_font':
+            if not settings.get_option('gui/columns', playlist_columns.DEFAULT_COLUMNS):
+                settings.set_option('gui/columns', playlist_columns.DEFAULT_COLUMNS)
+                settings.set_option('gui/resizable_cols', False)
+                self.header_menu.hide()
+                return
             GLib.idle_add(self._refresh_columns, priority=GLib.PRIORITY_DEFAULT)
 
     def on_playback_start(self, type, player, track):
@@ -1074,7 +1085,7 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
                 if not event.state & Gdk.ModifierType.CONTROL_MASK:
                     selection.unselect_all()
                 selection.select_path(path)
-            self.do_popup_menu(widget, event)
+            self.__do_popup_menu(widget, event)
             return True
 
         # We unselect all selected items if the user clicks on an empty
@@ -1111,22 +1122,23 @@ class PlaylistView(AutoScrollTreeView, providers.ProviderHandler):
 
         return Gtk.TreeView.do_button_release_event(self, e)
 
-    def do_popup_menu(self, widget, event):
+    def __do_popup_menu(self, widget, event):
         if event:
             button = event.button
             event_time = event.time
         else:
             button = 0
             event_time = Gtk.get_current_event_time()
+            # TODO: Fix menu position in case of keyboard activation
         self.menu.popup(None, None, None, None, button, event_time)
 
     def __on_popup_menu(self, widget):
-        self.do_popup_menu(widget, None)
+        self.__do_popup_menu(widget, None)
         return True
 
     def __on_key_press_event(self, widget, event):
         if event.keyval == Gdk.KEY_Menu:
-            self.do_popup_menu(widget, None)
+            self.__do_popup_menu(widget, None)
             return True
         elif event.keyval == Gdk.KEY_Delete:
             indexes = [x[0] for x in self.get_selected_paths()]

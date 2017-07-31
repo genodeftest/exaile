@@ -67,6 +67,8 @@ class Column(Gtk.TreeViewColumn):
             raise NotImplementedError("Can't instantiate "
                                       "abstract class %s" % repr(self.__class__))
 
+        print("Initializing column %s" % self.name)
+
         self.container = container
         self.player = player
         self.settings_width_name = "gui/col_width_%s" % self.name
@@ -112,7 +114,19 @@ class Column(Gtk.TreeViewColumn):
         self._width_notify = self.connect('notify::width', self.on_width_changed)
         self._setup_sizing()
 
-        event.add_ui_callback(self.on_option_set, "gui_option_set")
+        self.__option_disconnect_callback = \
+            event.add_ui_callback(self.on_option_set, "gui_option_set")
+
+    def destroy(self):
+        self.container = None
+        self.player = None
+        self.__option_disconnect_callback()
+        self.settings_width_name = None
+        self.renderer = None
+        if hasattr(self, 'icon_cellr'):
+            self.icon_cellr = None
+        self.disconnect(self._width_notify)
+        self._width_notify = None
 
     def on_option_set(self, typ, obj, data):
         if data in ("gui/resizable_cols", self.settings_width_name):
@@ -160,6 +174,8 @@ class Column(Gtk.TreeViewColumn):
             pass
 
     def _setup_sizing(self):
+        # TODO: calling Gtk.TreeViewColumn.set_resizable() on a widget which
+        # is not currently visible will trigger a bunch of Gtk-CRITICALs.
         with self.handler_block(self._width_notify):
             if settings.get_option('gui/resizable_cols', False):
                 self.set_resizable(True)
@@ -282,7 +298,8 @@ class RatingColumn(Column):
 
     def __init__(self, *args):
         Column.__init__(self, *args)
-        self.cellrenderer.connect('rating-changed', self.on_rating_changed)
+        self.__callback_id = \
+            self.cellrenderer.connect('rating-changed', self.on_rating_changed)
         self.cellrenderer.size_ratio = self.get_icon_size_ratio()
         self.saved_model = None
 
@@ -315,6 +332,10 @@ class RatingColumn(Column):
 
         rating = track.set_rating(rating)
         event.log_event('rating_changed', self, rating)
+
+    def destroy(self):
+        self.cellrenderer.disconnect(self.__callback_id)
+        Column.destroy(self)
 providers.register('playlist-columns', RatingColumn)
 
 
@@ -611,10 +632,26 @@ class ColumnMenuItem(menu.MenuItem):
         """
         columns = settings.get_option('gui/columns', DEFAULT_COLUMNS)
 
+        # parent is a playlist.PlaylistView object
         if name in columns:
+            # if removing the currently active column, make sure to set
+            # parent.header_selected_column to a different valid column.
+            if name == parent.header_selected_column:
+                new_index = columns.index(name)
             columns.remove(name)
+            if name == parent.header_selected_column:
+                if len(columns) == 0:
+                    parent.header_selected_column = None
+                else:
+                    new_index = min(len(columns) - 1, new_index)
+                    parent.header_selected_column = columns[new_index]
         else:
-            columns.append(name)
+            if len(columns) == 0:
+                columns.append(name)
+                parent.header_selected_column = name
+            else:
+                position = columns.index(parent.header_selected_column) + 1
+                columns.insert(position, name)
 
         settings.set_option('gui/columns', columns)
 
@@ -675,4 +712,6 @@ def __register_playlist_columns_menuitems():
 
     for menu_item in menu_items:
         providers.register('playlist-columns-menu', menu_item)
+
+
 __register_playlist_columns_menuitems()
