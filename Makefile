@@ -246,7 +246,14 @@ dist:
 check-doc: clean
 	$(MAKE) -C doc html
 
+FIXME: This needs the docker builds to include py.test-flakes on all platforms!
+Otherwise, it will abort with this error message:
+py.test: error: unrecognized arguments: --flakes
+On debian 8, the option "--cache-clear" is unknown too, probably because py.test is too old there or another package is missing.
+
 check-style:
+	# TODO also run pytest-pep8
+	# TODO also run pylint and pychecker
 	EXAILE_DIR=$(shell pwd) PYTHONPATH=$(shell pwd) $(PYTEST) -c tests/pytest.ini --cache-clear -q --flakes .
 
 BUILD_DIR		= /tmp/exaile-test-build
